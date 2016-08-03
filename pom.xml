@@ -3,16 +3,16 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>javafxtest</groupId>
-    <artifactId>javafxtest</artifactId>
-    <name>javafxtest</name>
+    <groupId>uk.ac.ebi.pride.toolsuite</groupId>
+    <artifactId>pride-advisor</artifactId>
+    <name>pride-advisor</name>
 
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
     
     <organization>
         <!-- Used as the 'Vendor' for JNLP generation -->
-        <name>test</name>
+        <name>EBML-EBI</name>
     </organization>
 
     <properties>
@@ -29,7 +29,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>8.1.5</version>
                 <configuration>
-                    <mainClass>javafx.test.MainApp</mainClass>
+                    <mainClass>uk.ac.ebi.pride.toolsuite.prideadvisor.MainApp</mainClass>
                     <!-- only required if signing the jar file -->
                     <!--<keyStoreAlias>example-user</keyStoreAlias>
                     <keyStorePassword>example-password</keyStorePassword>

@@ -1,4 +1,4 @@
-package javafx.test;
+package uk.ac.ebi.pride.toolsuite.prideadvisor;
 
 /**
  * Created by tobias on 02/08/2016.

@@ -1,52 +1,88 @@
-package javafx.test;
+package uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.validation;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.util.Constant;
-import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.*;
-import uk.ac.ebi.pride.utilities.data.core.*;
+import uk.ac.ebi.pride.toolsuite.prideadvisor.MainApp;
+import uk.ac.ebi.pride.toolsuite.prideadvisor.Report;
+import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.Utility;
+import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzIdentMLControllerImpl;
+import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzTabControllerImpl;
+import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.PrideXmlControllerImpl;
+import uk.ac.ebi.pride.utilities.data.core.CvParam;
+import uk.ac.ebi.pride.utilities.data.core.FragmentIon;
+import uk.ac.ebi.pride.utilities.data.core.Peptide;
+import uk.ac.ebi.pride.utilities.data.core.Spectrum;
 import uk.ac.ebi.pride.utilities.mol.MoleculeUtilities;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
-public class MainApp extends Application {
+import static uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.Utility.*;
 
-    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
+/**
+ * Created by tobias on 03/08/2016.
+ */
+public class Validator {
 
-    enum FileType {MZID, MZTAB, PRIDEXML, UNKNOWN};
+    private static final Logger log = LoggerFactory.getLogger(Validator.class);
 
-    public static void main(String[] args) throws Exception {
-        log.info("Starting application...");
-        if (args.length > 0) {
-            log.info("Program arguments: " + Arrays.toString(args));
-            CommandLine cmd = MainApp.parseArgs(args);
-            if (cmd.hasOption("v")) {
-                if (cmd.hasOption("mzid")) {
-                    validateMzdentML(cmd);
-                } else if (cmd.hasOption("pridexml")) {
-                    validatePrideXML(cmd);
-                } else if (cmd.hasOption("mztab")) {
-                    //validateMzTab(cmd);
-                }
-                exit();
-            } else {
-                launch(args);
-            }
+    public static void startValidation(CommandLine cmd) throws IOException{
+        if (cmd.hasOption(ARG_MZID)) {
+            validateMzdentML(cmd);
+        } else if (cmd.hasOption(ARG_PRIDEXML)) {
+            validatePrideXML(cmd);
+        } else if (cmd.hasOption(ARG_MZTAB)) {
+            log.info("Unable to validate mzTab files"); //TODO
         }
+        Utility.exit();
     }
 
-    private static void validateMzdentML(CommandLine cmd) throws IOException{
+    private static void validateFiles(List<File> inputFiles) {
+        List<Report> reports = new ArrayList<>();
+        inputFiles.stream().forEach(file -> {
+            try {
+                log.info("Validating file: " + file.getAbsolutePath());
+                MainApp.FileType fileType = getFileType(file);
+                if (fileType.equals(MainApp.FileType.MZID)) {
+
+                } else if (fileType.equals(MainApp.FileType.PRIDEXML)) {
+
+                } else if (fileType.equals(MainApp.FileType.MZTAB)) {
+
+                }
+                log.info("Finished validating file: " + file.getAbsolutePath());
+            } catch (IOException ioe) {
+                log.error("IOException: ", ioe);
+                Utility.exit();
+            }
+        });
+        outputReports(reports);
+    }
+
+    private static MainApp.FileType getFileType(File file) throws IOException {
+        MainApp.FileType result = null;
+        log.info("Checking file type for : " + file);
+        if (PrideXmlControllerImpl.isValidFormat(file)) {
+            result = MainApp.FileType.PRIDEXML;
+        } else if (MzIdentMLControllerImpl.isValidFormat(file)) {
+            result = MainApp.FileType.MZID;
+        } else if (MzTabControllerImpl.isValidFormat(file)) {
+            result = MainApp.FileType.MZTAB;
+        } else {
+            log.error("Unrecognised file type: " + file);
+            result = MainApp.FileType.UNKNOWN;
+            //exit();
+        }
+        return result;
+    }
+
+
+    public static void validateMzdentML(CommandLine cmd) throws IOException{
         List<File> filesToValidate = new ArrayList<File>();
         List<File> peakFiles = new ArrayList<>();
         File file = new File(cmd.getOptionValue("mzid"));
@@ -68,8 +104,8 @@ public class MainApp extends Application {
             log.error("Peak file not supplied with mzIdentML file.");
         }
         List<Report> reports = new ArrayList<>();
-        FileType fileType = getFileType(filesToValidate.get(0));
-        if (fileType.equals(FileType.MZID)) {
+        MainApp.FileType fileType = getFileType(filesToValidate.get(0));
+        if (fileType.equals(MainApp.FileType.MZID)) {
             reports.add(validateMzidFile(filesToValidate.get(0), peakFiles));
         } else {
             log.error("Supplied -mzid file is not a valid mzIdentML file: " + filesToValidate.get(0));
@@ -77,7 +113,7 @@ public class MainApp extends Application {
         outputReports(reports);
     }
 
-    private static void validatePrideXML(CommandLine cmd) throws IOException{
+    public static void validatePrideXML(CommandLine cmd) throws IOException{
         List<File> filesToValidate = new ArrayList<File>();
         List<File> peakFiles = new ArrayList<>();
         File file = new File(cmd.getOptionValue("pridexml"));
@@ -90,8 +126,8 @@ public class MainApp extends Application {
         List<Report> reports = new ArrayList<>();
         filesToValidate.parallelStream().forEach(file1 -> {
             try {
-                FileType fileType = getFileType(file1);
-                if (fileType.equals(FileType.PRIDEXML)) {
+                MainApp.FileType fileType = getFileType(file1);
+                if (fileType.equals(MainApp.FileType.PRIDEXML)) {
                     reports.add(validatePrideXMLFile(file1));
                 } else {
                     log.error("Supplied -pridexml file is not a valid PRIDE XML file: " + file1.getAbsolutePath());
@@ -101,46 +137,6 @@ public class MainApp extends Application {
             }
         });
         outputReports(reports);
-    }
-
-    private static void exit() {
-        log.debug("Exiting.");
-        System.exit(1);
-    }
-
-    private static void validateFiles(List<File> inputFiles) {
-        List<Report> reports = new ArrayList<>();
-        inputFiles.stream().forEach(file -> {
-            try {
-                log.info("Validating file: " + file.getAbsolutePath());
-                FileType fileType = getFileType(file);
-                if (fileType.equals(FileType.MZID)) {
-
-                } else if (fileType.equals(FileType.PRIDEXML)) {
-
-                } else if (fileType.equals(FileType.MZTAB)) {
-
-                }
-                log.info("Finished validating file: " + file.getAbsolutePath());
-            } catch (IOException ioe) {
-                log.error("IOException: ", ioe);
-                exit();
-            }
-        });
-        outputReports(reports);
-    }
-
-    private static void outputReports(List<Report> reports) {
-        reports.parallelStream().forEach(report -> log.info(report.toString()));
-    }
-
-    private static List<File> extractZipFiles(List<File> files) throws IOException {
-        List<File> zippedFiles = findZippedFiles(files);
-        if (zippedFiles.size()>0) {
-            files.removeAll(zippedFiles);
-            files.addAll(unzipFiles(zippedFiles, zippedFiles.get(0).getParentFile().getAbsoluteFile()));
-        }
-        return files.stream().distinct().collect(Collectors.toList());
     }
 
 
@@ -224,8 +220,8 @@ public class MainApp extends Application {
                 for (Peptide peptide :  prideXmlController.getProteinById(proteinId).getPeptides()) {
                     uniquePeptides.add(peptide.getSequence());
                     List<Double> ptmMasses = new ArrayList<>();
-                    peptide.getModifications().parallelStream().forEach(modification ->
-                            modification.getCvParams().parallelStream().forEach(cvParam -> {
+                    peptide.getModifications().stream().forEach(modification ->
+                            modification.getCvParams().stream().forEach(cvParam -> {
                                 if (cvParam.getCvLookupID() == null) {
                                     log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
                                     throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
@@ -237,7 +233,8 @@ public class MainApp extends Application {
                                 if (monoMasses != null && !monoMasses.isEmpty()) {
                                     ptmMasses.add((monoMasses.get(0)==null ? 0.0 : monoMasses.get(0)));
                                 }
-                            }));
+                            })
+                    );
                     Integer charge = prideXmlController.getPeptidePrecursorCharge(proteinId, peptide.getId());
                     double mz = prideXmlController.getPeptidePrecursorMz(proteinId, peptide.getId());
                     Comparable specId = prideXmlController.getPeptideSpectrumId(proteinId, peptide.getId());
@@ -279,8 +276,8 @@ public class MainApp extends Application {
             result.setUniquePTMs(ptms.size());
             result.setMatchFragIons(matches.size() <= 1);
             result.setUniquePeptides(uniquePeptides.size());
-            result.setTotalSpecra(allIdentifiedSpectrumIds.size());
-            result.setIdentifiedSpectra(allIdentifiedSpectrumIds.size());
+            result.setTotalSpecra(prideXmlController.getNumberOfSpectra());
+            result.setIdentifiedSpectra(existingIdentifiedSpectrumIds.size());
             allIdentifiedSpectrumIds.removeAll(existingIdentifiedSpectrumIds);
             result.setMissingIdSpectra(allIdentifiedSpectrumIds.size());
             result.setDeltaMzPercent(Double.valueOf((Math.round( errorPSMCount / (double)result.getTotalPeptides())*100.0)/100.0).intValue());
@@ -290,50 +287,14 @@ public class MainApp extends Application {
         return result;
     }
 
-    public void start(Stage stage) throws Exception {
 
-        log.info("Starting Hello JavaFX and Maven demonstration application");
-
-        String fxmlFile = "/fxml/hello.fxml";
-        log.debug("Loading FXML for main view from: {}", fxmlFile);
-        FXMLLoader loader = new FXMLLoader();
-        Parent rootNode = (Parent) loader.load(getClass().getResourceAsStream(fxmlFile));
-
-        log.debug("Showing JFX scene");
-        Scene scene = new Scene(rootNode, 400, 200);
-        scene.getStylesheets().add("/styles/styles.css");
-
-        stage.setTitle("Hello JavaFX and Maven");
-        stage.setScene(scene);
-        stage.show();
-    }
-
-    private static CommandLine parseArgs(String[] args) throws ParseException{
-        Options options = new Options();
-        options.addOption("v", false, "start to validate a file");
-        options.addOption("mzid", true, "input mzid file");
-        options.addOption("peak", true, "input peak file/directory");
-        options.addOption("pridexml", true, "input pride xml file/directory");
-        options.addOption("mztab", true, "input mztab file/directory");
-        CommandLineParser parser = new DefaultParser();
-        return parser.parse( options, args);
-    }
-
-    private static FileType getFileType(File file) throws IOException {
-        FileType result = null;
-        log.info("Checking file type for : " + file);
-        if (PrideXmlControllerImpl.isValidFormat(file)) {
-            result = FileType.PRIDEXML;
-        } else if (MzIdentMLControllerImpl.isValidFormat(file)) {
-            result = FileType.MZID;
-        } else if (MzTabControllerImpl.isValidFormat(file)) {
-            result = FileType.MZTAB;
-        } else {
-            log.error("Unrecognised file type: " + file);
-            result = FileType.UNKNOWN;
-            //exit();
+    private static List<File> extractZipFiles(List<File> files) throws IOException {
+        List<File> zippedFiles = findZippedFiles(files);
+        if (zippedFiles.size()>0) {
+            files.removeAll(zippedFiles);
+            files.addAll(unzipFiles(zippedFiles, zippedFiles.get(0).getParentFile().getAbsoluteFile()));
         }
-        return result;
+        return files.stream().distinct().collect(Collectors.toList());
     }
 
     private static List<File> findZippedFiles(List<File> files) {
@@ -386,16 +347,18 @@ public class MainApp extends Application {
                 }
             } catch (IOException ioe) {
                 log.error("IOException when unzipping files.", ioe);
-                exit();
+                Utility.exit();
             }
         });
         return unzippedFiles;
     }
 
+    private static void outputReports(List<Report> reports) {
+        reports.parallelStream().forEach(report -> log.info(report.toString()));
+    }
+
     private static boolean matchingFragmentIons(List<FragmentIon> fragmentIons, Spectrum spectrum) {
         double[][] massIntensityMap = spectrum.getMassIntensityMap();
-
-
         for (FragmentIon fragmentIon : fragmentIons) {
             double intensity = fragmentIon.getIntensity();
             double mz = fragmentIon.getMz();
@@ -412,7 +375,6 @@ public class MainApp extends Application {
                 return false;
             }
         }
-
         return true;
     }
 

@@ -1,4 +1,4 @@
-package javafx.test;
+package uk.ac.ebi.pride.toolsuite.prideadvisor;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
