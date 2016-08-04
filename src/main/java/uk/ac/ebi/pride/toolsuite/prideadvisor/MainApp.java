@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.validation.Convertor;
 import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.validation.Validator;
 import java.util.*;
 
@@ -17,9 +18,6 @@ public class MainApp extends Application {
 
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
-
-    public enum FileType {MZID, MZTAB, PRIDEXML, UNKNOWN};
-
     public static void main(String[] args) throws Exception {
         log.info("Starting application...");
         if (args.length > 0) {
@@ -27,7 +25,9 @@ public class MainApp extends Application {
             CommandLine cmd = MainApp.parseArgs(args);
             if (cmd.hasOption(ARG_VALIDATION)) {
                 Validator.startValidation(cmd);
-            } else {
+            } else if (cmd.hasOption(ARG_CONVERSION)) {
+                Convertor.startConversion(cmd);
+            }  else{
                 launch(args);
             }
         }
@@ -54,10 +54,14 @@ public class MainApp extends Application {
     private static CommandLine parseArgs(String[] args) throws ParseException{
         Options options = new Options();
         options.addOption(ARG_VALIDATION, false, "start to validate a file");
+        options.addOption(ARG_CONVERSION, false, "start to convert a file");
         options.addOption(ARG_MZID, true, "input mzid file");
-        options.addOption(ARG_PEAK, true, "input peak file/directory");
+        options.addOption(ARG_PEAK, true, "input peak file");
         options.addOption(ARG_PRIDEXML, true, "input pride xml file/directory");
-        options.addOption(ARG_MZTAB, true, "input mztab file/directory");
+        options.addOption(ARG_MZTAB, true, "input mztab file");
+        options.addOption(ARG_PROBED, true, "input probed file");
+        options.addOption(ARG_OUTPUTFILE, true, "exact output file");
+        options.addOption(ARG_OUTPUTTFORMAT, true, "exact output file format");
         CommandLineParser parser = new DefaultParser();
         return parser.parse( options, args);
     }

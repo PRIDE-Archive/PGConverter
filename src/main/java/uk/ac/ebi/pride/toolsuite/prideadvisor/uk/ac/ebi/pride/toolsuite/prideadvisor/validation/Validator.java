@@ -47,12 +47,12 @@ public class Validator {
         inputFiles.stream().forEach(file -> {
             try {
                 log.info("Validating file: " + file.getAbsolutePath());
-                MainApp.FileType fileType = getFileType(file);
-                if (fileType.equals(MainApp.FileType.MZID)) {
+                FileType fileType = getFileType(file);
+                if (fileType.equals(FileType.MZID)) {
 
-                } else if (fileType.equals(MainApp.FileType.PRIDEXML)) {
+                } else if (fileType.equals(FileType.PRIDEXML)) {
 
-                } else if (fileType.equals(MainApp.FileType.MZTAB)) {
+                } else if (fileType.equals(FileType.MZTAB)) {
 
                 }
                 log.info("Finished validating file: " + file.getAbsolutePath());
@@ -64,18 +64,18 @@ public class Validator {
         outputReports(reports);
     }
 
-    private static MainApp.FileType getFileType(File file) throws IOException {
-        MainApp.FileType result = null;
+    private static FileType getFileType(File file) throws IOException {
+        FileType result = null;
         log.info("Checking file type for : " + file);
         if (PrideXmlControllerImpl.isValidFormat(file)) {
-            result = MainApp.FileType.PRIDEXML;
+            result = FileType.PRIDEXML;
         } else if (MzIdentMLControllerImpl.isValidFormat(file)) {
-            result = MainApp.FileType.MZID;
+            result = FileType.MZID;
         } else if (MzTabControllerImpl.isValidFormat(file)) {
-            result = MainApp.FileType.MZTAB;
+            result = FileType.MZTAB;
         } else {
             log.error("Unrecognised file type: " + file);
-            result = MainApp.FileType.UNKNOWN;
+            result = FileType.UNKNOWN;
             //exit();
         }
         return result;
@@ -85,7 +85,7 @@ public class Validator {
     public static void validateMzdentML(CommandLine cmd) throws IOException{
         List<File> filesToValidate = new ArrayList<File>();
         List<File> peakFiles = new ArrayList<>();
-        File file = new File(cmd.getOptionValue("mzid"));
+        File file = new File(cmd.getOptionValue(ARG_MZID));
         if (file.isDirectory()) {
             log.error("Unable to validate against directory of mzid files.");
         } else {
@@ -104,8 +104,8 @@ public class Validator {
             log.error("Peak file not supplied with mzIdentML file.");
         }
         List<Report> reports = new ArrayList<>();
-        MainApp.FileType fileType = getFileType(filesToValidate.get(0));
-        if (fileType.equals(MainApp.FileType.MZID)) {
+        FileType fileType = getFileType(filesToValidate.get(0));
+        if (fileType.equals(FileType.MZID)) {
             reports.add(validateMzidFile(filesToValidate.get(0), peakFiles));
         } else {
             log.error("Supplied -mzid file is not a valid mzIdentML file: " + filesToValidate.get(0));
@@ -115,8 +115,7 @@ public class Validator {
 
     public static void validatePrideXML(CommandLine cmd) throws IOException{
         List<File> filesToValidate = new ArrayList<File>();
-        List<File> peakFiles = new ArrayList<>();
-        File file = new File(cmd.getOptionValue("pridexml"));
+        File file = new File(cmd.getOptionValue(ARG_PRIDEXML));
         if (file.isDirectory()) {
             filesToValidate.addAll(Arrays.asList(file.listFiles(File::isFile)));
         } else {
@@ -126,8 +125,8 @@ public class Validator {
         List<Report> reports = new ArrayList<>();
         filesToValidate.parallelStream().forEach(file1 -> {
             try {
-                MainApp.FileType fileType = getFileType(file1);
-                if (fileType.equals(MainApp.FileType.PRIDEXML)) {
+                FileType fileType = getFileType(file1);
+                if (fileType.equals(FileType.PRIDEXML)) {
                     reports.add(validatePrideXMLFile(file1));
                 } else {
                     log.error("Supplied -pridexml file is not a valid PRIDE XML file: " + file1.getAbsolutePath());
@@ -288,7 +287,7 @@ public class Validator {
     }
 
 
-    private static List<File> extractZipFiles(List<File> files) throws IOException {
+    public static List<File> extractZipFiles(List<File> files) throws IOException {
         List<File> zippedFiles = findZippedFiles(files);
         if (zippedFiles.size()>0) {
             files.removeAll(zippedFiles);

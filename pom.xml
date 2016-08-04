@@ -67,10 +67,6 @@
             <version>${ms.data.core.api.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>uk.ac.ebi.pride</groupId>
-                    <artifactId>jmztab-modular-util</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>logback-classic</artifactId>
                 </exclusion>

@@ -23,10 +23,12 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
         <module name="javafxtest" />
+        <module name="pride-advisor" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="javafxtest" target="1.8" />
+      <module name="pride-advisor" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
