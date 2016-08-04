@@ -55,13 +55,14 @@ public class MainApp extends Application {
         Options options = new Options();
         options.addOption(ARG_VALIDATION, false, "start to validate a file");
         options.addOption(ARG_CONVERSION, false, "start to convert a file");
-        options.addOption(ARG_MZID, true, "input mzid file");
-        options.addOption(ARG_PEAK, true, "input peak file");
-        options.addOption(ARG_PRIDEXML, true, "input pride xml file/directory");
-        options.addOption(ARG_MZTAB, true, "input mztab file");
-        options.addOption(ARG_PROBED, true, "input probed file");
+        options.addOption(ARG_MZID, true, "mzid file");
+        options.addOption(ARG_PEAK, true, "peak file");
+        options.addOption(ARG_PRIDEXML, true, "pride xml file");
+        options.addOption(ARG_MZTAB, true, "mztab file");
+        options.addOption(ARG_PROBED, true, "probed file");
         options.addOption(ARG_OUTPUTFILE, true, "exact output file");
         options.addOption(ARG_OUTPUTTFORMAT, true, "exact output file format");
+        options.addOption(ARG_INPUTFILE, true, "exact input file");
         CommandLineParser parser = new DefaultParser();
         return parser.parse( options, args);
     }

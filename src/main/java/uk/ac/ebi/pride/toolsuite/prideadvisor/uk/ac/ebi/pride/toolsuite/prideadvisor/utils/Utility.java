@@ -19,7 +19,9 @@ public class Utility {
     public static final String ARG_PROBED = "probed";
     public static final String ARG_BIGBED = "bigbed";
     public static final String ARG_OUTPUTFILE = "outputfile";
+    public static final String ARG_INPUTFILE = "inputfile";
     public static final String ARG_OUTPUTTFORMAT = "outputformat";
+    public static final String ARG_CHROMSIZES = "chromsizes";
 
     public enum FileType {MZID, MZTAB, PRIDEXML, UNKNOWN};
 
