@@ -30,12 +30,10 @@ public class Convertor {
 
     public static void startConversion(CommandLine cmd) throws IOException {
         log.info("Starting conversion...");
-        File inputFile = null;
-        String inputFileType = "";
+        File inputFile;
+        String inputFileType = null;
         if (cmd.hasOption(ARG_INPUTFILE)) {
             inputFile = new File(cmd.getOptionValue(ARG_INPUTFILE));
-            if (!inputFile.isDirectory()) {
-            }
         } else {
             inputFile = cmd.hasOption(ARG_MZID)? new File(cmd.getOptionValue(ARG_MZID))
                     : cmd.hasOption(ARG_PRIDEXML) ? new File(cmd.getOptionValue(ARG_PRIDEXML))
@@ -44,10 +42,11 @@ public class Convertor {
         }
         if (inputFile==null || inputFile.isDirectory()) {
             log.error("Unable to convert whole directory.");
-        }
-        inputFileType = FilenameUtils.getExtension(inputFile.getAbsolutePath()).toLowerCase();
-        if (inputFileType.equals("xml")) {
-            inputFileType = FileType.PRIDEXML.toString();
+        } else {
+            inputFileType = FilenameUtils.getExtension(inputFile.getAbsolutePath()).toLowerCase();
+            if (inputFileType.equals("xml")) {
+                inputFileType = FileType.PRIDEXML.toString();
+            }
         }
         File outputFile = null;
         String outputFormat = null;
@@ -61,20 +60,25 @@ public class Convertor {
             log.error("No output file or output format specified.");
         }
         if (inputFile!=null && outputFile!=null) {
-            if (inputFileType.equals(ARG_MZID) || inputFileType.equals(ARG_PRIDEXML)) {
-                if (outputFormat.equals(ARG_MZTAB)) {
-                    convertToMztab(inputFile, outputFile, inputFileType);
-                } else if (inputFileType.equals(ARG_MZID) && outputFormat.equals(ARG_PROBED)) {
-                    File intermediateMztab = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.MZTAB.toString().toLowerCase());
-                    convertToMztab(inputFile, intermediateMztab, inputFileType);
-                    startMztabToProbed(intermediateMztab, outputFile, cmd);
-                } else {
-                    log.error("Unable to convert input file into the target output format.");
-                }
-            } else if (inputFileType.equals(ARG_MZTAB)) {
-                startMztabToProbed(inputFile, outputFile, cmd);
-            } else if (inputFileType.equals(ARG_PROBED)) {
-                // convert to bigbed
+            switch (inputFileType) {
+                case ARG_MZID:
+                case ARG_PRIDEXML:
+                    if (outputFormat.equals(ARG_MZTAB)) {
+                        convertToMztab(inputFile, outputFile, inputFileType);
+                    } else if (inputFileType.equals(ARG_MZID) && outputFormat.equals(ARG_PROBED)) {
+                        File intermediateMztab = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.MZTAB.toString().toLowerCase());
+                        convertToMztab(inputFile, intermediateMztab, inputFileType);
+                        startMztabToProbed(intermediateMztab, outputFile, cmd);
+                    } else {
+                        log.error("Unable to convert input file into the target output format.");
+                    }
+                    break;
+                case ARG_MZTAB:
+                    startMztabToProbed(inputFile, outputFile, cmd);
+                    break;
+                case ARG_PROBED:
+                    // convert to bigbed
+                    break;
             }
         } else {
             log.error("No output file or format defined.");
@@ -97,10 +101,10 @@ public class Convertor {
     private static void convertToMztab(File inputFile, File outputMztabFile, String inputFormat) throws IOException{
         log.info("About to convert input file: " + inputFile.getAbsolutePath() + " to: " + outputMztabFile.getAbsolutePath());
         log.info("Input file format is: " + inputFormat);
-        List<File> filesToConvert = new ArrayList<File>();
+        List<File> filesToConvert = new ArrayList<>();
         filesToConvert.add(inputFile);
         filesToConvert = extractZipFiles(filesToConvert);
-        filesToConvert.stream().forEach(file -> {
+        filesToConvert.forEach(file -> {
             try {
                 AbstractMzTabConverter mzTabconverter = null;
                 if (inputFormat.equals(FileType.MZID)) {
@@ -113,7 +117,6 @@ public class Convertor {
                 if (mzTabconverter != null) {
                     MZTabFile mzTabFile = mzTabconverter.getMZTabFile();
                     MZTabFileConverter checker = new MZTabFileConverter();
-                    checker.check(mzTabFile);
                     BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(outputMztabFile));
                     mzTabFile.printMZTab(writer);
                     writer.close();
@@ -127,7 +130,7 @@ public class Convertor {
         });
     }
 
-    private static void convertMztabToProbed(File inputFile, File outputFile) {
+    private static void convertMztabToProbed(File inputFile, File outputFile) throws IOException{
         try {
             log.info("Converting to bed: " + inputFile.getAbsolutePath());
             MzTabControllerImpl mzTabController = new MzTabControllerImpl(inputFile);
@@ -147,6 +150,7 @@ public class Convertor {
             }
         } catch (Exception e) {
             log.error("Exception when converting mztab to probed: ", e);
+            throw new IOException(e);
         }
 
     }
