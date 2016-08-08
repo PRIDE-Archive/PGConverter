@@ -22,8 +22,21 @@ public class Utility {
     public static final String ARG_INPUTFILE = "inputfile";
     public static final String ARG_OUTPUTTFORMAT = "outputformat";
     public static final String ARG_CHROMSIZES = "chromsizes";
+    public static final String ARG_ASQLFILE = "asqlfile";
+    public static final String ARG_ASQLNAME = "asqlname";
+    public static final String ARG_BIGBEDCONVERTER = "bigbedconverter";
 
-    public enum FileType {MZID, MZTAB, PRIDEXML, UNKNOWN};
+    public enum FileType {MZID("mzid"), MZTAB("mztab"), PRIDEXML("xml"), ASQL("as"), PROBED("pro.bed"), BIGBED("bb"), UNKNOWN("");
+        private String format;
+
+        FileType(String format) {
+            this.format = format;
+        }
+
+        public String toString() {
+            return format;
+        }
+    }
 
     public static void exit() {
         log.info("Exiting application.");

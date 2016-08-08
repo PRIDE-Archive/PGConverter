@@ -63,6 +63,7 @@ public class MainApp extends Application {
         options.addOption(ARG_OUTPUTFILE, true, "exact output file");
         options.addOption(ARG_OUTPUTTFORMAT, true, "exact output file format");
         options.addOption(ARG_INPUTFILE, true, "exact input file");
+        options.addOption(ARG_CHROMSIZES, true, "chrom sizes file");
         CommandLineParser parser = new DefaultParser();
         return parser.parse( options, args);
     }
