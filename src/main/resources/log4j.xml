@@ -10,7 +10,7 @@
         </layout>
     </appender>
 
-    <logger name="javafxtest">
+    <logger name="pride-advisor">
         <level value="DEBUG"/>
     </logger>
 

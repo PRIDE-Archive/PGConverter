@@ -5,7 +5,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.jmztab.model.MZTabFile;
-import uk.ac.ebi.pride.jmztab.utils.MZTabFileConverter;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzIdentMLControllerImpl;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzTabControllerImpl;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.PrideXmlControllerImpl;
@@ -16,9 +15,7 @@ import uk.ac.ebi.pride.utilities.data.exporters.PRIDEMzTabConverter;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import static uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.Utility.*;
@@ -143,7 +140,6 @@ public class Convertor {
 
     private static void convertToMztab(File inputFile, File outputMztabFile, String inputFormat) throws IOException{
         log.info("About to convert input file: " + inputFile.getAbsolutePath() + " to: " + outputMztabFile.getAbsolutePath());
-        log.info("Input file format is: " + inputFormat);
         List<File> filesToConvert = new ArrayList<>();
         filesToConvert.add(inputFile);
         filesToConvert = extractZipFiles(filesToConvert);
@@ -159,7 +155,6 @@ public class Convertor {
                 }
                 if (mzTabconverter != null) {
                     MZTabFile mzTabFile = mzTabconverter.getMZTabFile();
-                    MZTabFileConverter checker = new MZTabFileConverter();
                     BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(outputMztabFile));
                     mzTabFile.printMZTab(writer);
                     writer.close();

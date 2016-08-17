@@ -14,6 +14,7 @@ public class Utility {
     public static final String ARG_CONVERSION = "c";
     public static final String ARG_MZID = "mzid";
     public static final String ARG_PEAK = "peak";
+    public static final String ARG_PEAKS = "peaks";
     public static final String ARG_PRIDEXML = "pridexml";
     public static final String ARG_MZTAB = "mztab";
     public static final String ARG_PROBED = "probed";
@@ -25,6 +26,7 @@ public class Utility {
     public static final String ARG_ASQLFILE = "asqlfile";
     public static final String ARG_ASQLNAME = "asqlname";
     public static final String ARG_BIGBEDCONVERTER = "bigbedconverter";
+    public static final String ARG_REPORTFILE = "reportfile";
 
     public enum FileType {MZID("mzid"), MZTAB("mztab"), PRIDEXML("xml"), ASQL("as"), PROBED("pro.bed"), BIGBED("bb"), UNKNOWN("");
         private String format;
