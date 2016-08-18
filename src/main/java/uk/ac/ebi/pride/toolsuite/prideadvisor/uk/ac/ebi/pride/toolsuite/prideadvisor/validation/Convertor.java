@@ -101,7 +101,7 @@ public class Convertor {
         } else {
             log.error("No output file or format defined.");
         }
-        exit();
+        exit(cmd);
     }
 
     private static void startMztabToProbed(File inputFile, File outputFile, CommandLine cmd) throws IOException {
