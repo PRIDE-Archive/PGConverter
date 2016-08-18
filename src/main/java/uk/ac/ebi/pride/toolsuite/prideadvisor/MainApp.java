@@ -1,21 +1,15 @@
 package uk.ac.ebi.pride.toolsuite.prideadvisor;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.toolsuite.prideadvisor.controller.ScreensFramework;
 import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.validation.Convertor;
 import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.validation.Validator;
 import java.util.*;
 
 import static uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.Utility.*;
 
-public class MainApp extends Application {
+public class MainApp  {
 
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
@@ -28,20 +22,20 @@ public class MainApp extends Application {
                 Validator.startValidation(cmd);
             } else if (cmd.hasOption(ARG_CONVERSION)) {
                 Convertor.startConversion(cmd);
-            }  else {
+            }  /*else {
                 launch(args);
-            }
-        }  else {
+            }*/
+        }  /*else {
             launch(args);
-        }
+        }*/
     }
 
-    public void start(Stage stage) throws Exception {
+/*    public void start(Stage stage) throws Exception {
 
         log.info("Starting PRIDE-advisor JavaFX application");
         ScreensFramework framework = new ScreensFramework();
         framework.start(stage);
-        /*String fxmlFile = "/fxml/advisor.fxml";
+        *//*String fxmlFile = "/fxml/advisor.fxml";
         log.debug("Loading FXML for main view from: {}", fxmlFile);
         FXMLLoader loader = new FXMLLoader();
         Parent rootNode = (Parent) loader.load(getClass().getResourceAsStream(fxmlFile));
@@ -52,8 +46,8 @@ public class MainApp extends Application {
 
         stage.setTitle("PRIDE-advisor");
         stage.setScene(scene);
-        stage.show();*/
-    }
+        stage.show();*//*
+    }*/
 
     private static CommandLine parseArgs(String[] args) throws ParseException{
         Options options = new Options();

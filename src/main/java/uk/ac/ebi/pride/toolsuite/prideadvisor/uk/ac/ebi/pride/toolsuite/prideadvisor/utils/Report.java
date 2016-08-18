@@ -1,15 +1,14 @@
-package uk.ac.ebi.pride.toolsuite.prideadvisor;
+package uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils;
 
 import org.apache.commons.lang.StringUtils;
 import uk.ac.ebi.pride.archive.repo.assay.AssayGroupCvParam;
 import uk.ac.ebi.pride.archive.repo.assay.AssayGroupUserParam;
+import uk.ac.ebi.pride.archive.repo.assay.AssayPTM;
+import uk.ac.ebi.pride.archive.repo.assay.Contact;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.Instrument;
 import uk.ac.ebi.pride.archive.repo.assay.software.Software;
 import uk.ac.ebi.pride.archive.repo.assay.software.SoftwareCvParam;
 import uk.ac.ebi.pride.archive.repo.assay.software.SoftwareUserParam;
-import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.PeakFileSummary;
-import uk.ac.ebi.pride.utilities.data.core.CvParam;
-import uk.ac.ebi.pride.utilities.data.core.Person;
 
 import java.util.*;
 
@@ -21,11 +20,11 @@ public class Report {
     private String fileName = "";
     private String name = "";
     private String shortLabel = "";
-    private List<Person> contacts = new ArrayList<>();
+    private Set<Contact> contacts = new HashSet<>();
     private int totalProteins = 0;
     private int totalPeptides = 0;
     private int totalSpecra = 0;
-    private Set<CvParam> uniquePTMs = new HashSet<>();
+    private Set<AssayPTM> uniquePTMs = new HashSet<>();
     private int deltaMzPercent = 0;
     private int identifiedSpectra = 0;
     private int missingIdSpectra = 0;
@@ -36,8 +35,8 @@ public class Report {
     private String searchDatabase = "";
     private String exampleProteinAccession = "";
     private boolean proteinGroupPresent = false;
-    private final Set<AssayGroupCvParam> cvParams = new HashSet<>();
-    private final Set<AssayGroupUserParam> userParams = new HashSet<>();
+    private Set<AssayGroupCvParam> cvParams = new HashSet<>();
+    private Set<AssayGroupUserParam> userParams = new HashSet<>();
     private boolean chromatogram = false;
 
     public String getName() {
@@ -48,11 +47,11 @@ public class Report {
         this.name = name;
     }
 
-    public List<Person> getContacts() {
+    public Set<Contact> getContacts() {
         return contacts;
     }
 
-    public void setContacts(List<Person> contacts) {
+    public void setContacts(Set<Contact> contacts) {
         this.contacts = contacts;
     }
 
@@ -130,11 +129,11 @@ public class Report {
         this.totalSpecra = totalSpecra;
     }
 
-    public Set<CvParam> getUniquePTMs() {
+    public Set<AssayPTM> getUniquePTMs() {
         return uniquePTMs;
     }
 
-    public void setUniquePTMs(Set<CvParam> uniquePTMs) {
+    public void setUniquePTMs(Set<AssayPTM> uniquePTMs) {
         this.uniquePTMs = uniquePTMs;
     }
 
@@ -279,26 +278,44 @@ public class Report {
         return sb.toString();
     }
 
+    public String toString(AssayFileSummary assayFileSummary) {
+        name = assayFileSummary.getName();
+        shortLabel = assayFileSummary.getShortLabel();
+        contacts = assayFileSummary.getContacts();
+        instruments = assayFileSummary.getInstruments();
+        softwareSet = assayFileSummary.getSoftwares();
+        searchDatabase = assayFileSummary.getSearchDatabase();
+        exampleProteinAccession = assayFileSummary.getExampleProteinAccession();
+        proteinGroupPresent = assayFileSummary.isProteinGroupPresent();
+        cvParams = assayFileSummary.getCvParams();
+        userParams = assayFileSummary.getUserParams();
+        chromatogram = assayFileSummary.hasChromatogram();
+        totalProteins = assayFileSummary.getNumberOfProteins();
+        totalPeptides = assayFileSummary.getNumberOfPeptides();
+        uniquePeptides = assayFileSummary.getNumberOfUniquePeptides();
+        totalSpecra = assayFileSummary.getNumberOfSpectra();
+        identifiedSpectra = assayFileSummary.getNumberOfIdentifiedSpectra();
+        missingIdSpectra = assayFileSummary.getNumberofMissingSpectra();
+        uniquePTMs = assayFileSummary.getPtms();
+        deltaMzPercent = new Double(assayFileSummary.getDeltaMzErrorRate()*100.0).intValue();
+        matchFragIons = assayFileSummary.isSpectrumMatchFragmentIons();
+        return this.toString();
+    }
+
     private String contactsToString() {
         List<String> result = new ArrayList<>();
         contacts.stream().forEach(person -> {
             StringBuilder sb = new StringBuilder();
             sb.append("[");
-            sb.append(person.getId());
+            sb.append(person.getTitle());
             sb.append(",");
-            sb.append(person.getName());
+            sb.append(person.getFirstName());
             sb.append(",");
-            sb.append(person.getFirstname());
-            sb.append(",");
-            sb.append(person.getMidInitials());
-            sb.append(",");
-            sb.append(person.getLastname());
+            sb.append(person.getLastName());
             sb.append(",");
             sb.append(person.getAffiliation());
             sb.append(",");
-            sb.append(person.getContactInfo());
-            sb.append(",");
-            sb.append(person.getContactInfo());
+            sb.append(person.getEmail());
             sb.append("]");
             result.add(sb.toString());
         });
@@ -326,7 +343,7 @@ public class Report {
         uniquePTMs.stream().forEachOrdered(cvParam -> {
             StringBuilder sb = new StringBuilder();
             sb.append("[");
-            sb.append(cvParam.getCvLookupID());
+            sb.append(cvParam.getCvLabel());
             sb.append(",");
             sb.append(cvParam.getName());
             sb.append(",");
