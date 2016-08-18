@@ -42,7 +42,7 @@ public class Utility {
 
     public static void exit() {
         log.info("Exiting application.");
-        System.exit(1);
+        System.exit(0);
     }
 
 }
