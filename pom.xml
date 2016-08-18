@@ -110,6 +110,13 @@
 
     <dependencies>
         <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>2.9.0</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>uk.ac.ebi.pride</groupId>
             <artifactId>px-submission-core</artifactId>
             <version>${px.submission.core.version}</version>

@@ -49,7 +49,7 @@ public class Validator {
         } else if (cmd.hasOption(ARG_MZTAB)) {
             log.info("Unable to validate mzTab files"); //TODO
         }
-        Utility.exit();
+        Utility.exit(cmd);
     }
 
     private static FileType getFileType(File file) throws IOException {
@@ -377,7 +377,6 @@ public class Validator {
                 }
             } catch (IOException ioe) {
                 log.error("IOException when unzipping files.", ioe);
-                Utility.exit();
             }
         });
         return unzippedFiles;
