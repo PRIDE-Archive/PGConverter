@@ -34,7 +34,7 @@ public class Utility {
     public static final String ARG_REDIS = "redis";
     public static final String ARG_REDIS_SERVER = "redisserver";
     public static final String ARG_REDIS_PORT = "redisport";
-    public static final String ARG_REDIS_PASSWORD = "redispasword";
+    public static final String ARG_REDIS_PASSWORD = "redispassword";
     public static final String ARG_REDIS_CHANNEL = "redischannel";
     public static final String ARG_REDIS_MESSAGE = "redismessage";
 
