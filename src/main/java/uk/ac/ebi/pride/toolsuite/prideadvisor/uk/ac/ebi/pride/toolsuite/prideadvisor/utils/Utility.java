@@ -62,7 +62,7 @@ public class Utility {
     public static void notifyRedisChannel(String jedisServer, int jedisPort, String jedisPassword, String assayChannel, String message) {
         try {
             log.info("Connecting to REDIS channel:" + assayChannel);
-            JedisPool pool = new JedisPool(new JedisPoolConfig(), jedisServer, jedisPort, 60000, jedisPassword);
+            JedisPool pool = new JedisPool(new JedisPoolConfig(), jedisServer, jedisPort, 0, jedisPassword);
             Jedis jedis = pool.getResource();
             log.info("Publishing message to REDIS: " + message);
             jedis.publish(assayChannel, message);
