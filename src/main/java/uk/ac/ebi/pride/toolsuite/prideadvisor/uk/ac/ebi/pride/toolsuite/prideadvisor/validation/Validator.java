@@ -163,7 +163,7 @@ public class Validator {
             assayFileSummary.setNumberOfProteins(mzIdentMLController.getNumberOfProteins());
             assayFileSummary.setNumberofMissingSpectra(mzIdentMLController.getNumberOfMissingSpectra());
             assayFileSummary.setNumberOfSpectra(mzIdentMLController.getNumberOfSpectra());
-
+            log.info("Starting to parse over proteins (" + assayFileSummary.getNumberOfProteins() + ") and peptides (" + assayFileSummary.getNumberOfPeptides() + ").");
             if (mzIdentMLController.getNumberOfMissingSpectra()<1) {
                 mzIdentMLController.getProteinIds().stream().forEach(proteinId ->
                         mzIdentMLController.getProteinById(proteinId).getPeptides().stream().forEach(peptide-> {
@@ -192,6 +192,7 @@ public class Validator {
                 assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
                 assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
                 assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
+                log.info("Finished parsing over proteins and peptides.");
             } else {
                 log.error("Missing spectra are present");
             }
@@ -431,15 +432,18 @@ public class Validator {
     }
 
     private static void scanForGeneralMetadata(DataAccessController dataAccessController, AssayFileSummary assayFileSummary) {
+        log.info("Started scanning for general metadata.");
         assayFileSummary.setName(dataAccessController.getName());
         assayFileSummary.setShortLabel(StringUtils.isEmpty(dataAccessController.getExperimentMetaData().getShortLabel()) ? "" : dataAccessController.getExperimentMetaData().getShortLabel() );
         assayFileSummary.addContacts(DataConversionUtil.convertContact(dataAccessController.getExperimentMetaData().getPersons()));
         ParamGroup additional = dataAccessController.getExperimentMetaData().getAdditional();
         assayFileSummary.addCvParams(DataConversionUtil.convertAssayGroupCvParams(additional));
         assayFileSummary.addUserParams(DataConversionUtil.convertAssayGroupUserParams(additional));
+        log.info("Finished scanning for general metadata.");
     }
 
     private static void scanForInstrument(DataAccessController dataAccessController, AssayFileSummary assayFileSummary) {
+        log.info("Started scanning for instruments");
         Set<Instrument> instruments = new HashSet<>();
         //check to see if we have instrument configurations in the result file to scan
         //this isn't always present
@@ -493,18 +497,22 @@ public class Validator {
             }
         } // else do nothing
         assayFileSummary.addInstruments(instruments);
+        log.info("Finished scanning for instruments");
     }
 
     private static void scanForSoftware(DataAccessController dataAccessController, AssayFileSummary assayFileSummary) {
+        log.info("Started scanning for software");
         ExperimentMetaData experimentMetaData = dataAccessController.getExperimentMetaData();
         Set<Software> softwares = new HashSet<>();
         softwares.addAll(experimentMetaData.getSoftwares());
         Set softwareSet = new HashSet<>();
         softwareSet.addAll(DataConversionUtil.convertSoftware(softwares));
         assayFileSummary.addSoftwares(softwareSet);
+        log.info("Finished scanning for software");
     }
 
     private static void scanForSearchDetails(DataAccessController dataAccessController, AssayFileSummary assayFileSummary) {
+        log.info("Started scanning for search details");
         // protein group
         boolean proteinGroupPresent = dataAccessController.hasProteinAmbiguityGroup();
         assayFileSummary.setProteinGroupPresent(proteinGroupPresent);
@@ -523,9 +531,11 @@ public class Validator {
                 assayFileSummary.setSearchDatabase(searchDatabase.getName());
             }
         }
+        log.info("Finished scanning for search details");
     }
 
     private static void scanMzIdentMLSpecificDetails(MzIdentMLControllerImpl mzIdentMLController, List<File> peakFiles, AssayFileSummary assayFileSummary) throws IOException {
+        log.info("Started scanning for mzid-specific details");
         Set<PeakFileSummary> peakFileSummaries = new HashSet<>();
         List peakFileNames = new ArrayList();
 
@@ -545,9 +555,11 @@ public class Validator {
             peakFileSummaries.add(new PeakFileSummary(realFileName, !peakFileNames.contains(realFileName), numberOfSpectrabySpectraData));
         }
         assayFileSummary.addPeakFileSummaries(peakFileSummaries);
+        log.info("Finished scanning for mzid-specific details");
     }
 
     private static boolean getMzMLSummary(File mappedFile, AssayFileSummary assayFileSummary) {
+        log.info("Getting mzml summary.");
         MzMLControllerImpl mzMLController = null;
         try {
             mzMLController = new MzMLControllerImpl(mappedFile);
@@ -558,6 +570,7 @@ public class Validator {
             }
         } finally {
             if (mzMLController != null) {
+                log.info("Finished getting mzml summary.");
                 mzMLController.close();
             }
         }
