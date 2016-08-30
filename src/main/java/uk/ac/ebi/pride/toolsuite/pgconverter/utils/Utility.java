@@ -1,4 +1,4 @@
-package uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils;
+package uk.ac.ebi.pride.toolsuite.pgconverter.utils;
 
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
@@ -16,6 +16,7 @@ public class Utility {
 
     public static final String ARG_VALIDATION = "v";
     public static final String ARG_CONVERSION = "c";
+    public static final String ARG_MESSAGE = "m";
     public static final String ARG_MZID = "mzid";
     public static final String ARG_PEAK = "peak";
     public static final String ARG_PEAKS = "peaks";

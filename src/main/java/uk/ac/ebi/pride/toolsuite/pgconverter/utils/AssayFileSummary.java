@@ -1,4 +1,4 @@
-package uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils;
+package uk.ac.ebi.pride.toolsuite.pgconverter.utils;
 
 import uk.ac.ebi.pride.archive.repo.assay.*;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.Instrument;

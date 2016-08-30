@@ -4,14 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>uk.ac.ebi.pride.toolsuite</groupId>
-    <artifactId>pride-advisor</artifactId>
-    <name>pride-advisor</name>
+    <artifactId>pg-converterr</artifactId>
+    <name>pg-converter</name>
 
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
     
     <organization>
-        <!-- Used as the 'Vendor' for JNLP generation -->
         <name>EBML-EBI</name>
     </organization>
 
@@ -25,7 +24,7 @@
     </properties>
 
     <build>
-        <finalName>pride-advisor</finalName>
+        <finalName>pg-converter</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -60,7 +59,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>uk.ac.ebi.pride.toolsuite.prideadvisor.MainApp</mainClass>
+                            <mainClass>uk.ac.ebi.pride.toolsuite.pgconverter.MainApp</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib</classpathPrefix>
                         </manifest>

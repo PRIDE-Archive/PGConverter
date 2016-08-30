@@ -1,4 +1,4 @@
-package uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.validation;
+package uk.ac.ebi.pride.toolsuite.pgconverter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FilenameUtils;
@@ -18,15 +18,14 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.Utility.*;
-import static uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.validation.Validator.extractZipFiles;
+import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 
 /**
  * Created by tobias on 03/08/2016.
  */
-public class Convertor {
+public class Converter {
 
-    private static final Logger log = LoggerFactory.getLogger(Convertor.class);
+    private static final Logger log = LoggerFactory.getLogger(Converter.class);
 
     public static void startConversion(CommandLine cmd) throws IOException {
         log.info("Starting conversion...");
@@ -55,44 +54,54 @@ public class Convertor {
             outputFormat = FilenameUtils.getExtension(outputFile.getAbsolutePath()).toLowerCase();
         } else if (cmd.hasOption(ARG_OUTPUTTFORMAT)) {
             outputFormat =  cmd.getOptionValue(ARG_OUTPUTTFORMAT).toLowerCase();
-            outputFile = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + outputFormat);
+            if (inputFile != null) {
+                outputFile = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + outputFormat);
+            }
         } else {
             log.error("No output file or output format specified.");
         }
         if (inputFile!=null && outputFile!=null) {
-            switch (inputFileType) {
+            switch (inputFileType != null ? inputFileType : "") {
                 case ARG_MZID:
                 case ARG_PRIDEXML:
                     if (outputFormat.equals(ARG_MZTAB)) {
                         convertToMztab(inputFile, outputFile, inputFileType);
-                    } else if (inputFileType.equals(ARG_MZID) && outputFormat.equals(ARG_PROBED)) {
-                        File intermediateMztab = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.MZTAB.toString().toLowerCase());
-                        convertToMztab(inputFile, intermediateMztab, inputFileType);
-                        startMztabToProbed(intermediateMztab, outputFile, cmd);
-                    } else if (inputFileType.equals(ARG_MZID) && outputFormat.equals(ARG_BIGBED)) {
-                        File intermediateMztab = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.MZTAB.toString().toLowerCase());
-                        convertToMztab(inputFile, intermediateMztab, inputFileType);
-                        File intermediateProbed = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.PROBED.toString().toLowerCase());
-                        startMztabToProbed(intermediateMztab, intermediateProbed, cmd);
-                        startProbedToBigbed(intermediateProbed, outputFile, cmd);
                     } else {
-                        log.error("Unable to convert input mzid/pride xml file into the target output format.");
+                        if ((inputFileType != null && inputFileType.equals(ARG_MZID)) && outputFormat.equals(ARG_PROBED)) {
+                            File intermediateMztab = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.MZTAB.toString().toLowerCase());
+                            convertToMztab(inputFile, intermediateMztab, inputFileType);
+                            startMztabToProbed(intermediateMztab, outputFile, cmd);
+                        } else {
+                            if ((inputFileType != null && inputFileType.equals(ARG_MZID)) && outputFormat.equals(ARG_BIGBED)) {
+                                File intermediateMztab = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.MZTAB.toString().toLowerCase());
+                                convertToMztab(inputFile, intermediateMztab, inputFileType);
+                                File intermediateProbed = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.PROBED.toString().toLowerCase());
+                                startMztabToProbed(intermediateMztab, intermediateProbed, cmd);
+                                startProbedToBigbed(intermediateProbed, cmd);
+                            } else {
+                                log.error("Unable to convert input mzid/pride xml file into the target output format.");
+                            }
+                        }
                     }
                     break;
                 case ARG_MZTAB:
-                    if (outputFormat.equals(ARG_PROBED)) {
-                        startMztabToProbed(inputFile, outputFile, cmd);
-                    } else if (outputFormat.equals(ARG_BIGBED)) {
-                        File intermediateProbed = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.PROBED.toString().toLowerCase());
-                        startMztabToProbed(inputFile, intermediateProbed, cmd);
-                        startProbedToBigbed(intermediateProbed, outputFile, cmd);
-                    } else {
-                        log.error("Unable to convert input mztab into the target output format.");
+                    switch (outputFormat) {
+                        case ARG_PROBED:
+                            startMztabToProbed(inputFile, outputFile, cmd);
+                            break;
+                        case ARG_BIGBED:
+                            File intermediateProbed = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.PROBED.toString().toLowerCase());
+                            startMztabToProbed(inputFile, intermediateProbed, cmd);
+                            startProbedToBigbed(intermediateProbed, cmd);
+                            break;
+                        default:
+                            log.error("Unable to convert input mztab into the target output format.");
+                            break;
                     }
                     break;
                 case ARG_PROBED:
                     if (outputFormat.equals(ARG_BIGBED)) {
-                        startProbedToBigbed(inputFile, outputFile, cmd);
+                        startProbedToBigbed(inputFile, cmd);
                     }  else {
                         log.error("Unable to convert input probed into the target output format.");
                     }
@@ -101,7 +110,6 @@ public class Convertor {
         } else {
             log.error("No output file or format defined.");
         }
-        exit(cmd);
     }
 
     private static void startMztabToProbed(File inputFile, File outputFile, CommandLine cmd) throws IOException {
@@ -117,7 +125,7 @@ public class Convertor {
         }
     }
 
-    private static void startProbedToBigbed (File inputFile, File outputFile, CommandLine cmd) throws IOException {
+    private static void startProbedToBigbed (File inputFile, CommandLine cmd) throws IOException {
         File aSQL = null;
         File chromSizes = null;
         File bigBedConverter = null;
@@ -134,7 +142,7 @@ public class Convertor {
             bigBedConverter =  new File(cmd.getOptionValue(ARG_BIGBEDCONVERTER));
         }
         if (aSQL!=null && chromSizes!=null && bigBedConverter!=null) {
-            convertProbedToBigbed(inputFile, aSQL, chromSizes, bigBedConverter, outputFile);
+            convertProbedToBigbed(inputFile, aSQL, chromSizes, bigBedConverter);
         }
     }
 
@@ -142,7 +150,7 @@ public class Convertor {
         log.info("About to convert input file: " + inputFile.getAbsolutePath() + " to: " + outputMztabFile.getAbsolutePath());
         List<File> filesToConvert = new ArrayList<>();
         filesToConvert.add(inputFile);
-        filesToConvert = extractZipFiles(filesToConvert);
+        filesToConvert = Validator.extractZipFiles(filesToConvert);
         filesToConvert.forEach(file -> {
             try {
                 AbstractMzTabConverter mzTabconverter = null;
@@ -174,16 +182,25 @@ public class Convertor {
             MzTabControllerImpl mzTabController = new MzTabControllerImpl(inputFile);
             MzTabBedConverter mzTabBedConverter = new MzTabBedConverter(mzTabController);
             log.info("New proBed file path: " + outputFile.getAbsolutePath());
-            outputFile.getParentFile().mkdirs();
-            outputFile.createNewFile();
+            boolean createdDirs = outputFile.getParentFile().mkdirs();
+            boolean cratedNewFile = outputFile.createNewFile();
+            if (createdDirs && cratedNewFile) {
+                log.info("Crated new dir and file");
+            } else {
+                log.error("Unable to create new dir and/or file");
+            }
             mzTabBedConverter.convert(outputFile);
             mzTabController.close();
             log.info("Finished processing " + outputFile.getAbsolutePath());
             File mzTabDirectory = inputFile.getParentFile();
-            for (File file : mzTabDirectory.listFiles()) {
-                if (file.getName().contains("pride.mztaberrors.out")) {
-                    file.delete();
-                    break;
+            File[] files = mzTabDirectory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.getName().contains("pride.mztaberrors.out")) {
+                        boolean deleted = file.delete();
+                        log.info("Deleted file: " + deleted);
+                        break;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -193,7 +210,7 @@ public class Convertor {
 
     }
 
-    private static void convertProbedToBigbed(File probed, File aSQL, File chromSizes, File bigBedConverter, File outputFile) throws IOException {
+    private static void convertProbedToBigbed(File probed, File aSQL, File chromSizes, File bigBedConverter) throws IOException {
         try {
             File outputBigBed = MzTabBedConverter.convertProBedToBigBed(
                     aSQL,
@@ -203,7 +220,6 @@ public class Convertor {
                     bigBedConverter
             );
             log.info("Generated output bigBed file:" + outputBigBed);
-
         } catch (IOException|URISyntaxException|InterruptedException e) {
             log.error("Error when converting to bigBed: ", e);
         }
@@ -211,6 +227,5 @@ public class Convertor {
 
     private static void createAsql(String name, File aSQL) throws IOException{
     }
-
 
 }

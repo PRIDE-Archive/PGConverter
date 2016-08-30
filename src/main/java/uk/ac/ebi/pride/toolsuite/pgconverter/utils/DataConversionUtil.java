@@ -1,4 +1,4 @@
-package uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils;
+package uk.ac.ebi.pride.toolsuite.pgconverter.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +11,6 @@ import uk.ac.ebi.pride.archive.repo.assay.instrument.InstrumentComponentUserPara
 import uk.ac.ebi.pride.archive.repo.assay.software.SoftwareCvParam;
 import uk.ac.ebi.pride.archive.repo.assay.software.SoftwareUserParam;
 import uk.ac.ebi.pride.archive.repo.project.*;
-import uk.ac.ebi.pride.archive.repo.project.Reference;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.model.Param;
 import uk.ac.ebi.pride.data.util.Constant;

@@ -1,4 +1,4 @@
-package uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.validation;
+package uk.ac.ebi.pride.toolsuite.pgconverter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FilenameUtils;
@@ -11,11 +11,10 @@ import uk.ac.ebi.pride.archive.repo.assay.instrument.SourceInstrumentComponent;
 import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
-import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.Report;
-import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.AssayFileSummary;
-import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.DataConversionUtil;
-import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.PeakFileSummary;
-import uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.Utility;
+import uk.ac.ebi.pride.toolsuite.pgconverter.utils.Report;
+import uk.ac.ebi.pride.toolsuite.pgconverter.utils.AssayFileSummary;
+import uk.ac.ebi.pride.toolsuite.pgconverter.utils.DataConversionUtil;
+import uk.ac.ebi.pride.toolsuite.pgconverter.utils.PeakFileSummary;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzIdentMLControllerImpl;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzMLControllerImpl;
@@ -32,7 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
-import static uk.ac.ebi.pride.toolsuite.prideadvisor.uk.ac.ebi.pride.toolsuite.prideadvisor.utils.Utility.*;
+import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 
 /**
  * Created by tobias on 03/08/2016.
@@ -49,7 +48,6 @@ public class Validator {
         } else if (cmd.hasOption(ARG_MZTAB)) {
             log.info("Unable to validate mzTab files"); //TODO
         }
-        Utility.exit(cmd);
     }
 
     private static FileType getFileType(File file) throws IOException {
