@@ -1,6 +1,6 @@
 <assembly>
 
-    <id>pride-advisor-deployment</id>
+    <id>pg-converter-deployment</id>
 
     <formats>
         <format>zip</format>
