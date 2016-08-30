@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>uk.ac.ebi.pride.toolsuite</groupId>
-    <artifactId>pg-converterr</artifactId>
+    <artifactId>pg-converter</artifactId>
     <name>pg-converter</name>
 
     <packaging>jar</packaging>
