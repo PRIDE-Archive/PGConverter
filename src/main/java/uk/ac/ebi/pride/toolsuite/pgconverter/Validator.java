@@ -83,7 +83,10 @@ public class Validator {
             for (String aPeakFilesString : peakFilesString) {
                 File peakFile = new File(aPeakFilesString);
                 if (peakFile.isDirectory()) {
-                    peakFiles.addAll(Arrays.asList(peakFile.listFiles(File::isFile)));
+                    File[] listFiles = peakFile.listFiles(File::isFile);
+                    if (listFiles!=null) {
+                        peakFiles.addAll(Arrays.asList(listFiles));
+                    }
                 } else {
                     peakFiles.add(peakFile);
                     log.info("Added peak file: " + peakFile.getPath());
@@ -163,11 +166,11 @@ public class Validator {
             assayFileSummary.setNumberOfSpectra(mzIdentMLController.getNumberOfSpectra());
             log.info("Starting to parse over proteins (" + assayFileSummary.getNumberOfProteins() + ") and peptides (" + assayFileSummary.getNumberOfPeptides() + ").");
             if (mzIdentMLController.getNumberOfMissingSpectra()<1) {
-                mzIdentMLController.getProteinIds().stream().forEach(proteinId ->
-                        mzIdentMLController.getProteinById(proteinId).getPeptides().stream().forEach(peptide-> {
+                mzIdentMLController.getProteinIds().forEach(proteinId ->
+                        mzIdentMLController.getProteinById(proteinId).getPeptides().forEach(peptide -> {
                             uniquePeptides.add(peptide.getSequence());
-                            peptide.getModifications().stream().forEach(modification ->
-                                    modification.getCvParams().stream().forEach(cvParam -> {
+                            peptide.getModifications().forEach(modification ->
+                                    modification.getCvParams().forEach(cvParam -> {
                                         if (cvParam.getCvLookupID() == null) {
                                             log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
                                             throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
@@ -236,8 +239,8 @@ public class Validator {
                     for (Peptide peptide :  prideXmlController.getProteinById(proteinId).getPeptides()) {
                         uniquePeptides.add(peptide.getSequence());
                         List<Double> ptmMasses = new ArrayList<>();
-                        peptide.getModifications().stream().forEach(modification ->
-                                modification.getCvParams().stream().forEach(cvParam -> {
+                        peptide.getModifications().forEach(modification ->
+                                modification.getCvParams().forEach(cvParam -> {
                                     if (cvParam.getCvLookupID() == null) {
                                         log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
                                         throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
@@ -247,7 +250,7 @@ public class Validator {
                                     }
                                     List<Double> monoMasses = modification.getMonoisotopicMassDelta();
                                     if (monoMasses != null && !monoMasses.isEmpty()) {
-                                        ptmMasses.add((monoMasses.get(0)==null ? 0.0 : monoMasses.get(0)));
+                                        ptmMasses.add((monoMasses.get(0) == null ? 0.0 : monoMasses.get(0)));
                                     }
                                 })
                         );
@@ -327,12 +330,7 @@ public class Validator {
     }
 
     private static List<File> findZippedFiles(List<File> files) {
-        List<File> zippedFiles = new ArrayList<>();
-        for (File file : files) {
-            if (file.getName().endsWith(".gz")) {
-                zippedFiles.add(file);
-            }
-        }
+        List<File> zippedFiles = files.stream().filter(file -> file.getName().endsWith(".gz")).collect(Collectors.toList());
         return zippedFiles;
     }
 
@@ -535,7 +533,7 @@ public class Validator {
     private static void scanMzIdentMLSpecificDetails(MzIdentMLControllerImpl mzIdentMLController, List<File> peakFiles, AssayFileSummary assayFileSummary) throws IOException {
         log.info("Started scanning for mzid-specific details");
         Set<PeakFileSummary> peakFileSummaries = new HashSet<>();
-        List peakFileNames = new ArrayList();
+        List<String> peakFileNames = new ArrayList<>();
 
         for (File peakFile : peakFiles) {
             peakFileNames.add(peakFile.getName());
