@@ -121,15 +121,13 @@ public final class DataConversionUtil {
         Collection<ProjectGroupUserParam> retval = new HashSet<>();
         if (additional != null) {
             for (Param param : additional) {
-                //don't process cv params
-                if (param instanceof uk.ac.ebi.pride.data.model.CvParam) {
-                    continue;
-                }
-                ProjectGroupUserParam userParam = new ProjectGroupUserParam();
-                userParam.setName(param.getName());
-                userParam.setValue(param.getValue());
-                userParam.setProject(project);
-                retval.add(userParam);
+                if (!(param instanceof uk.ac.ebi.pride.data.model.CvParam)) {
+                    ProjectGroupUserParam userParam = new ProjectGroupUserParam();
+                    userParam.setName(param.getName());
+                    userParam.setValue(param.getValue());
+                    userParam.setProject(project);
+                    retval.add(userParam);
+                } //don't process cv params
             }
         }
         return retval;
