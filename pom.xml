@@ -8,13 +8,14 @@
     <name>pg-converter</name>
 
     <packaging>jar</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>${revision}</version>
     
     <organization>
         <name>EBML-EBI</name>
     </organization>
 
     <properties>
+        <revision>1.0-SNAPSHOT</revision>
         <assembly.dir>${project.name}-${project.version}</assembly.dir>
         <px.submission.core.version>2.0.10-SNAPSHOT</px.submission.core.version>
         <archive.repo.version>0.1.19</archive.repo.version>
@@ -102,6 +103,13 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-scm-plugin</artifactId>
+                <version>1.9.4</version>
+                <configuration>
+                    <tag>${project.artifactId}-${project.version}</tag>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -207,4 +215,10 @@
         </repository>
     </repositories>
 
+    <scm>
+        <connection>scm:git:https://github.com/PRIDE-Toolsuite/PGConverter.git</connection>
+        <developerConnection>scm:git:https://github.com/PRIDE-Toolsuite/PGConverter.git</developerConnection>
+        <url>https://github.com/PRIDE-Toolsuite/PGConverter</url>
+        <tag>HEAD</tag>
+    </scm>
 </project>
