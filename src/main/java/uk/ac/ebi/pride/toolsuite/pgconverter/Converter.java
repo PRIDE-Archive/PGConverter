@@ -184,10 +184,10 @@ public class Converter {
             log.info("New proBed file path: " + outputFile.getAbsolutePath());
             boolean createdDirs = outputFile.getParentFile().mkdirs();
             boolean cratedNewFile = outputFile.createNewFile();
-            if (createdDirs && cratedNewFile) {
-                log.info("Crated new dir and file");
+            if (createdDirs || cratedNewFile) {
+                log.info("Crated new directory and/or file.");
             } else {
-                log.error("Unable to create new dir and/or file");
+                log.info("Unable to create new directory and file, either the directory and/or file already exists or no insufficient permissions to access them.");
             }
             mzTabBedConverter.convert(outputFile);
             mzTabController.close();
