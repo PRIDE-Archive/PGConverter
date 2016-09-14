@@ -114,7 +114,6 @@
         </plugins>
     </build>
 
-
     <dependencies>
         <dependency>
             <groupId>redis.clients</groupId>
