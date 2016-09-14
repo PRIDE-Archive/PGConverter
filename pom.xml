@@ -161,7 +161,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>uk.ac.ebi.pride</groupId>
-                    <artifactId>>px-submission-core</artifactId>
+                    <artifactId>px-submission-core</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
