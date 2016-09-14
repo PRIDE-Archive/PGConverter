@@ -11,10 +11,7 @@ import uk.ac.ebi.pride.archive.repo.assay.instrument.SourceInstrumentComponent;
 import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
-import uk.ac.ebi.pride.toolsuite.pgconverter.utils.Report;
-import uk.ac.ebi.pride.toolsuite.pgconverter.utils.AssayFileSummary;
-import uk.ac.ebi.pride.toolsuite.pgconverter.utils.DataConversionUtil;
-import uk.ac.ebi.pride.toolsuite.pgconverter.utils.PeakFileSummary;
+import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzIdentMLControllerImpl;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzMLControllerImpl;
@@ -451,8 +448,8 @@ public class Validator {
                 //set instrument cv param
                 uk.ac.ebi.pride.archive.repo.param.CvParam cvParam = new uk.ac.ebi.pride.archive.repo.param.CvParam();
                 cvParam.setCvLabel(Constant.MS);
-                cvParam.setName(Constant.MS_INSTRUMENT_MODEL_NAME);
-                cvParam.setAccession(Constant.MS_INSTRUMENT_MODEL_AC);
+                cvParam.setName(Utility.MS_INSTRUMENT_MODEL_NAME);
+                cvParam.setAccession(Utility.MS_INSTRUMENT_MODEL_AC);
                 instrument.setCvParam(cvParam);
                 instrument.setValue(instrumentConfiguration.getId());
 

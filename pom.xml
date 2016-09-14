@@ -9,7 +9,7 @@
 
     <packaging>jar</packaging>
     <version>${revision}</version>
-    
+
     <organization>
         <name>EBML-EBI</name>
     </organization>
@@ -17,7 +17,6 @@
     <properties>
         <revision>1.0-SNAPSHOT</revision>
         <assembly.dir>${project.name}-${project.version}</assembly.dir>
-        <px.submission.core.version>2.0.10-SNAPSHOT</px.submission.core.version>
         <archive.repo.version>0.1.19</archive.repo.version>
         <ms.data.core.api.version>2.0.8-JAVA8-SNAPSHOT</ms.data.core.api.version>
         <slf4j.version>1.7.12</slf4j.version>
@@ -125,21 +124,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>uk.ac.ebi.pride</groupId>
-            <artifactId>px-submission-core</artifactId>
-            <version>${px.submission.core.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>uk.ac.ebi.pride.archive</groupId>
             <artifactId>archive-repo</artifactId>
             <version>${archive.repo.version}</version>
@@ -159,10 +143,6 @@
             <artifactId>ms-data-core-api</artifactId>
             <version>${ms.data.core.api.version}</version>
             <exclusions>
-                <exclusion>
-                    <groupId>uk.ac.ebi.pride</groupId>
-                    <artifactId>px-submission-core</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>logback-classic</artifactId>

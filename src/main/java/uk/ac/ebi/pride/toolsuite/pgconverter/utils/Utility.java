@@ -38,6 +38,12 @@ public class Utility {
     public static final String ARG_REDIS_PASSWORD = "redispassword";
     public static final String ARG_REDIS_CHANNEL = "redischannel";
     public static final String ARG_REDIS_MESSAGE = "redismessage";
+    public static final String MS_INSTRUMENT_MODEL_AC = "MS:1000031";
+    public static final String MS_SOFTWARE_AC = "MS:1000531";
+    public static final String MS_CONTACT_EMAIL_AC = "MS:1000589";
+    public static final String MS_SOFTWARE_NAME = "software";
+    public static final String MS_INSTRUMENT_MODEL_NAME = "instrument model";
+
 
     public enum FileType {MZID("mzid"), MZTAB("mztab"), PRIDEXML("xml"), ASQL("as"), PROBED("pro.bed"), BIGBED("bb"), UNKNOWN("");
         private String format;

@@ -374,7 +374,7 @@ public final class DataConversionUtil {
 
                     //contact info might be in params
                     for (uk.ac.ebi.pride.utilities.data.core.CvParam param : person.getCvParams()) {
-                        if (param.getAccession().equals(Constant.MS_CONTACT_EMAIL_AC)) {
+                        if (param.getAccession().equals(Utility.MS_CONTACT_EMAIL_AC)) {
                             //found it
                             email = param.getValue();
                             break;
