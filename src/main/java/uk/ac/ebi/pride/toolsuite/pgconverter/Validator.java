@@ -76,7 +76,7 @@ public class Validator {
         filesToValidate = extractZipFiles(filesToValidate);
         if (cmd.hasOption("peak") || cmd.hasOption("peaks")) {
             String[] peakFilesString = cmd.hasOption("peak") ? cmd.getOptionValues("peak")
-                                      : cmd.hasOption("peaks") ?  cmd.getOptionValue("peaks").split(";") : new String[0];
+                                      : cmd.hasOption("peaks") ?  cmd.getOptionValue("peaks").split("##") : new String[0];
             for (String aPeakFilesString : peakFilesString) {
                 File peakFile = new File(aPeakFilesString);
                 if (peakFile.isDirectory()) {
@@ -144,7 +144,7 @@ public class Validator {
             mzIdentMLController.addMSController(dataAccessControllerFiles);
             Set<String> uniquePeptides = new HashSet<>();
             Set<CvParam> ptms = new HashSet<>();
-            final int NUMBER_OF_CHECKS=100;
+            final int NUMBER_OF_CHECKS=10;
             List<Boolean> randomChecks = new ArrayList<>();
             IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add( mzIdentMLController.checkRandomSpectraByDeltaMassThreshold(1, 4.0)));
             boolean passedRandomCheck = true;
