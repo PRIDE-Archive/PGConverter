@@ -14,9 +14,9 @@ public class MainApp  {
 
     public static void main(String[] args) throws Exception {
         log.info("Starting application...");
+        log.info("Program arguments: " + Arrays.toString(args));
         CommandLine cmd = MainApp.parseArgs(args);
         if (args.length > 0) {
-            log.info("Program arguments: " + Arrays.toString(args));
             if (cmd.hasOption(ARG_VALIDATION)) {
                 Validator.startValidation(cmd);
             } else if (cmd.hasOption(ARG_CONVERSION)) {
@@ -54,8 +54,7 @@ public class MainApp  {
         options.addOption(ARG_REDIS_PASSWORD, true, "Redis password");
         options.addOption(ARG_REDIS_CHANNEL, true, "Redis channel");
         options.addOption(ARG_REDIS_MESSAGE, true, "Redis message");
-
         CommandLineParser parser = new DefaultParser();
-        return parser.parse( options, args);
+        return parser.parse(options, args);
     }
 }
