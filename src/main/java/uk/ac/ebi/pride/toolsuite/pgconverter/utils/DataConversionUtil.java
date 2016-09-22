@@ -19,10 +19,9 @@ import uk.ac.ebi.pride.utilities.data.core.*;
 import java.util.*;
 
 /**
- * Convert various data model
+ * Converts various data models for validation purposes.
  *
- * @author Rui Wang
- * @version $Id$
+ * @author Tobias Ternent
  */
 public final class DataConversionUtil {
 

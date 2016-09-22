@@ -13,7 +13,10 @@ import uk.ac.ebi.pride.archive.repo.assay.software.SoftwareUserParam;
 import java.util.*;
 
 /**
- * Created by tobias on 02/08/2016.
+ * This class provides details of assay file(s) as a validation report for key information,
+ * e.g. peptide and protein numbers.
+ *
+ * @author Tobias Ternent
  */
 public class Report {
     private String status = "";
@@ -39,196 +42,16 @@ public class Report {
     private Set<AssayGroupUserParam> userParams = new HashSet<>();
     private boolean chromatogram = false;
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Set<Contact> getContacts() {
-        return contacts;
-    }
-
-    public void setContacts(Set<Contact> contacts) {
-        this.contacts = contacts;
-    }
-
-    public String getShortLabel() {
-        return shortLabel;
-    }
-
-    public void setShortLabel(String shortLabel) {
-        this.shortLabel = shortLabel;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Set<AssayGroupUserParam> getUserParams() {
-        return userParams;
-    }
-
-    public Set<AssayGroupCvParam> getCvParams() {
-        return cvParams;
-    }
-
-    public boolean isChromatogram() {
-        return chromatogram;
-    }
-
-    public void setChromatogram(boolean chromatogram) {
-        this.chromatogram = chromatogram;
-    }
-
-    public Set<PeakFileSummary> getPeakFileSummaries() {
-        return peakFileSummaries;
-    }
-
-    public void setPeakFileSummaries(Set<PeakFileSummary> peakFileSummaries) {
-        this.peakFileSummaries = peakFileSummaries;
-    }
-
-    private Set<PeakFileSummary> peakFileSummaries;
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
-    public int getTotalProteins() {
-        return totalProteins;
-    }
-
-    public void setTotalProteins(int totalProteins) {
-        this.totalProteins = totalProteins;
-    }
-
-    public int getTotalPeptides() {
-        return totalPeptides;
-    }
-
-    public void setTotalPeptides(int totalPeptides) {
-        this.totalPeptides = totalPeptides;
-    }
-
-    public int getTotalSpecra() {
-        return totalSpecra;
-    }
-
-    public void setTotalSpecra(int totalSpecra) {
-        this.totalSpecra = totalSpecra;
-    }
-
-    public Set<AssayPTM> getUniquePTMs() {
-        return uniquePTMs;
-    }
-
-    public void setUniquePTMs(Set<AssayPTM> uniquePTMs) {
-        this.uniquePTMs = uniquePTMs;
-    }
-
-    public int getDeltaMzPercent() {
-        return deltaMzPercent;
-    }
-
-    public void setDeltaMzPercent(int deltaMzPercent) {
-        this.deltaMzPercent = deltaMzPercent;
-    }
-
-    public int getIdentifiedSpectra() {
-        return identifiedSpectra;
-    }
-
-    public void setIdentifiedSpectra(int identifiedSpectra) {
-        this.identifiedSpectra = identifiedSpectra;
-    }
-
-    public int getMissingIdSpectra() {
-        return missingIdSpectra;
-    }
-
-    public void setMissingIdSpectra(int missingIdSpectra) {
-        this.missingIdSpectra = missingIdSpectra;
-    }
-
-    public boolean isMatchFragIons() {
-        return matchFragIons;
-    }
-
-    public void setMatchFragIons(boolean matchFragIons) {
-        this.matchFragIons = matchFragIons;
-    }
-
-    public int getUniquePeptides() {
-        return uniquePeptides;
-    }
-
-    public void setUniquePeptides(int uniquePeptides) {
-        this.uniquePeptides = uniquePeptides;
-    }
-
-    public Set<Instrument> getInstruments() {
-        return instruments;
-    }
-
-    public void setInstruments(Set<Instrument> instruments) {
-        this.instruments = instruments;
-    }
-
-    public Set<Software> getSoftwareSet() {
-        return softwareSet;
-    }
-
-    public void setSoftwareSet(Set<Software> softwareSet) {
-        this.softwareSet = softwareSet;
-    }
-
-    public String getSearchDatabase() {
-        return searchDatabase;
-    }
-
-    public void setSearchDatabase(String searchDatabase) {
-        this.searchDatabase = searchDatabase;
-    }
-
-    public String getExampleProteinAccession() {
-        return exampleProteinAccession;
-    }
-
-    public void setExampleProteinAccession(String exampleProteinAccession) {
-        this.exampleProteinAccession = exampleProteinAccession;
-    }
-
-    public boolean isProteinGroupPresent() {
-        return proteinGroupPresent;
-    }
-
-    public void setProteinGroupPresent(boolean proteinGroupPresent) {
-        this.proteinGroupPresent = proteinGroupPresent;
-    }
-
-    public void addCvParams(Collection<AssayGroupCvParam> cvParams) {
-        this.cvParams.addAll(cvParams);
-    }
-
-    public void addUserParams(Collection<AssayGroupUserParam> userParams) {
-        this.userParams.addAll(userParams);
-    }
-
+    /**
+     * Default constructor. No variables are set.
+     */
     public Report() {
-
     }
 
+    /**
+     * Outputs the report as a String object.
+     * @return the report as a properly formatted String.
+     */
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Status: " + status);
@@ -278,6 +101,11 @@ public class Report {
         return sb.toString();
     }
 
+    /**
+     * Sets the assay summary to be output, and converts this to a String.
+     * @param assayFileSummary the assay summary to extract information from.
+     * @return the report as a properly formatted String.
+     */
     public String toString(AssayFileSummary assayFileSummary) {
         name = assayFileSummary.getName();
         shortLabel = assayFileSummary.getShortLabel();
@@ -302,9 +130,13 @@ public class Report {
         return this.toString();
     }
 
+    /**
+     * Converts all contacts to a String, joined by ',' separators.
+     * @return a String of all the contacts.
+     */
     private String contactsToString() {
         List<String> result = new ArrayList<>();
-        contacts.stream().forEach(person -> {
+        contacts.forEach(person -> {
             StringBuilder sb = new StringBuilder();
             sb.append("[");
             sb.append(person.getTitle());
@@ -322,6 +154,10 @@ public class Report {
         return StringUtils.join(result, ",");
     }
 
+    /**
+     * Converts all instruments to a String, joined by ',' separators.
+     * @return a String of all the instruments.
+     */
     private String instrumentsToString() {
         List<String> result = new ArrayList<>();
         instruments.stream().forEachOrdered(instrument -> {
@@ -338,6 +174,10 @@ public class Report {
         return StringUtils.join(result, ",");
     }
 
+    /**
+     * Converts all unique PTMs to a String, joined by ',' separators.
+     * @return a String of all the unique PTMs.
+     */
     private String uniquePTMstoString() {
         List<String> result = new ArrayList<>();
         uniquePTMs.stream().forEachOrdered(cvParam -> {
@@ -356,6 +196,10 @@ public class Report {
         return StringUtils.join(result, ",");
     }
 
+    /**
+     * Converts all unique Softwares to a String, joined by ',' separators.
+     * @return a String of all the software.
+     */
     private String softwareToString() {
         List<String> result = new ArrayList<>();
         softwareSet.stream().forEachOrdered(software -> {
@@ -410,6 +254,10 @@ public class Report {
         return StringUtils.join(result, ",");
     }
 
+    /**
+     * Converts all unique CV Params to a String, joined by ',' separators.
+     * @return a String of all the CV Params.
+     */
     private String cvParamsToString() {
         StringBuilder sb = new StringBuilder();
         List<String> assayCvPs = new ArrayList<>();
@@ -432,6 +280,10 @@ public class Report {
         return sb.toString();
     }
 
+    /**
+     * Converts all unique User Params to a String, joined by ',' separators.
+     * @return a String of all the User Params.
+     */
     private String userParamsToString() {
         StringBuilder sb = new StringBuilder();
         List<String> assayCvPs = new ArrayList<>();
@@ -448,5 +300,402 @@ public class Report {
         sb.append(StringUtils.join(assayCvPs, ","));
         sb.append("}");
         return sb.toString();
+    }
+
+
+    /**
+     * Sets new instruments.
+     *
+     * @param instruments New value of instruments.
+     */
+    public void setInstruments(Set<Instrument> instruments) {
+        this.instruments = instruments;
+    }
+
+    /**
+     * Sets new searchDatabase.
+     *
+     * @param searchDatabase New value of searchDatabase.
+     */
+    public void setSearchDatabase(String searchDatabase) {
+        this.searchDatabase = searchDatabase;
+    }
+
+    /**
+     * Gets instruments.
+     *
+     * @return Value of instruments.
+     */
+    public Set<Instrument> getInstruments() {
+        return instruments;
+    }
+
+    /**
+     * Gets identifiedSpectra.
+     *
+     * @return Value of identifiedSpectra.
+     */
+    public int getIdentifiedSpectra() {
+        return identifiedSpectra;
+    }
+
+    /**
+     * Gets exampleProteinAccession.
+     *
+     * @return Value of exampleProteinAccession.
+     */
+    public String getExampleProteinAccession() {
+        return exampleProteinAccession;
+    }
+
+    /**
+     * Sets new totalProteins.
+     *
+     * @param totalProteins New value of totalProteins.
+     */
+    public void setTotalProteins(int totalProteins) {
+        this.totalProteins = totalProteins;
+    }
+
+    /**
+     * Gets proteinGroupPresent.
+     *
+     * @return Value of proteinGroupPresent.
+     */
+    public boolean isProteinGroupPresent() {
+        return proteinGroupPresent;
+    }
+
+    /**
+     * Gets softwareSet.
+     *
+     * @return Value of softwareSet.
+     */
+    public Set<Software> getSoftwareSet() {
+        return softwareSet;
+    }
+
+    /**
+     * Sets new fileName.
+     *
+     * @param fileName New value of fileName.
+     */
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    /**
+     * Sets new identifiedSpectra.
+     *
+     * @param identifiedSpectra New value of identifiedSpectra.
+     */
+    public void setIdentifiedSpectra(int identifiedSpectra) {
+        this.identifiedSpectra = identifiedSpectra;
+    }
+
+    /**
+     * Gets totalSpecra.
+     *
+     * @return Value of totalSpecra.
+     */
+    public int getTotalSpecra() {
+        return totalSpecra;
+    }
+
+    /**
+     * Gets totalProteins.
+     *
+     * @return Value of totalProteins.
+     */
+    public int getTotalProteins() {
+        return totalProteins;
+    }
+
+    /**
+     * Gets chromatogram.
+     *
+     * @return Value of chromatogram.
+     */
+    public boolean isChromatogram() {
+        return chromatogram;
+    }
+
+    /**
+     * Sets new missingIdSpectra.
+     *
+     * @param missingIdSpectra New value of missingIdSpectra.
+     */
+    public void setMissingIdSpectra(int missingIdSpectra) {
+        this.missingIdSpectra = missingIdSpectra;
+    }
+
+    /**
+     * Sets new userParams.
+     *
+     * @param userParams New value of userParams.
+     */
+    public void setUserParams(Set<AssayGroupUserParam> userParams) {
+        this.userParams = userParams;
+    }
+
+    /**
+     * Gets contacts.
+     *
+     * @return Value of contacts.
+     */
+    public Set<Contact> getContacts() {
+        return contacts;
+    }
+
+    /**
+     * Sets new chromatogram.
+     *
+     * @param chromatogram New value of chromatogram.
+     */
+    public void setChromatogram(boolean chromatogram) {
+        this.chromatogram = chromatogram;
+    }
+
+    /**
+     * Sets new deltaMzPercent.
+     *
+     * @param deltaMzPercent New value of deltaMzPercent.
+     */
+    public void setDeltaMzPercent(int deltaMzPercent) {
+        this.deltaMzPercent = deltaMzPercent;
+    }
+
+    /**
+     * Sets new status.
+     *
+     * @param status New value of status.
+     */
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    /**
+     * Sets new uniquePTMs.
+     *
+     * @param uniquePTMs New value of uniquePTMs.
+     */
+    public void setUniquePTMs(Set<AssayPTM> uniquePTMs) {
+        this.uniquePTMs = uniquePTMs;
+    }
+
+    /**
+     * Gets userParams.
+     *
+     * @return Value of userParams.
+     */
+    public Set<AssayGroupUserParam> getUserParams() {
+        return userParams;
+    }
+
+    /**
+     * Gets missingIdSpectra.
+     *
+     * @return Value of missingIdSpectra.
+     */
+    public int getMissingIdSpectra() {
+        return missingIdSpectra;
+    }
+
+    /**
+     * Gets status.
+     *
+     * @return Value of status.
+     */
+    public String getStatus() {
+        return status;
+    }
+
+    /**
+     * Gets deltaMzPercent.
+     *
+     * @return Value of deltaMzPercent.
+     */
+    public int getDeltaMzPercent() {
+        return deltaMzPercent;
+    }
+
+    /**
+     * Gets shortLabel.
+     *
+     * @return Value of shortLabel.
+     */
+    public String getShortLabel() {
+        return shortLabel;
+    }
+
+    /**
+     * Sets new totalPeptides.
+     *
+     * @param totalPeptides New value of totalPeptides.
+     */
+    public void setTotalPeptides(int totalPeptides) {
+        this.totalPeptides = totalPeptides;
+    }
+
+    /**
+     * Gets totalPeptides.
+     *
+     * @return Value of totalPeptides.
+     */
+    public int getTotalPeptides() {
+        return totalPeptides;
+    }
+
+    /**
+     * Sets new softwareSet.
+     *
+     * @param softwareSet New value of softwareSet.
+     */
+    public void setSoftwareSet(Set<Software> softwareSet) {
+        this.softwareSet = softwareSet;
+    }
+
+    /**
+     * Gets name.
+     *
+     * @return Value of name.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Sets new proteinGroupPresent.
+     *
+     * @param proteinGroupPresent New value of proteinGroupPresent.
+     */
+    public void setProteinGroupPresent(boolean proteinGroupPresent) {
+        this.proteinGroupPresent = proteinGroupPresent;
+    }
+
+    /**
+     * Gets matchFragIons.
+     *
+     * @return Value of matchFragIons.
+     */
+    public boolean isMatchFragIons() {
+        return matchFragIons;
+    }
+
+    /**
+     * Sets new cvParams.
+     *
+     * @param cvParams New value of cvParams.
+     */
+    public void setCvParams(Set<AssayGroupCvParam> cvParams) {
+        this.cvParams = cvParams;
+    }
+
+    /**
+     * Sets new name.
+     *
+     * @param name New value of name.
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * Sets new totalSpecra.
+     *
+     * @param totalSpecra New value of totalSpecra.
+     */
+    public void setTotalSpecra(int totalSpecra) {
+        this.totalSpecra = totalSpecra;
+    }
+
+    /**
+     * Sets new uniquePeptides.
+     *
+     * @param uniquePeptides New value of uniquePeptides.
+     */
+    public void setUniquePeptides(int uniquePeptides) {
+        this.uniquePeptides = uniquePeptides;
+    }
+
+    /**
+     * Sets new matchFragIons.
+     *
+     * @param matchFragIons New value of matchFragIons.
+     */
+    public void setMatchFragIons(boolean matchFragIons) {
+        this.matchFragIons = matchFragIons;
+    }
+
+    /**
+     * Gets searchDatabase.
+     *
+     * @return Value of searchDatabase.
+     */
+    public String getSearchDatabase() {
+        return searchDatabase;
+    }
+
+    /**
+     * Sets new contacts.
+     *
+     * @param contacts New value of contacts.
+     */
+    public void setContacts(Set<Contact> contacts) {
+        this.contacts = contacts;
+    }
+
+    /**
+     * Gets uniquePTMs.
+     *
+     * @return Value of uniquePTMs.
+     */
+    public Set<AssayPTM> getUniquePTMs() {
+        return uniquePTMs;
+    }
+
+    /**
+     * Sets new exampleProteinAccession.
+     *
+     * @param exampleProteinAccession New value of exampleProteinAccession.
+     */
+    public void setExampleProteinAccession(String exampleProteinAccession) {
+        this.exampleProteinAccession = exampleProteinAccession;
+    }
+
+    /**
+     * Gets uniquePeptides.
+     *
+     * @return Value of uniquePeptides.
+     */
+    public int getUniquePeptides() {
+        return uniquePeptides;
+    }
+
+    /**
+     * Gets fileName.
+     *
+     * @return Value of fileName.
+     */
+    public String getFileName() {
+        return fileName;
+    }
+
+    /**
+     * Gets cvParams.
+     *
+     * @return Value of cvParams.
+     */
+    public Set<AssayGroupCvParam> getCvParams() {
+        return cvParams;
+    }
+
+    /**
+     * Sets new shortLabel.
+     *
+     * @param shortLabel New value of shortLabel.
+     */
+    public void setShortLabel(String shortLabel) {
+        this.shortLabel = shortLabel;
     }
 }

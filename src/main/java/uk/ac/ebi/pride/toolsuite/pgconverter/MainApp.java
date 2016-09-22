@@ -8,30 +8,49 @@ import java.util.*;
 
 import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 
-public class MainApp  {
+/**
+ * This is the main class for the tool, which parses cmmand line arguments and starts the approoriate operation
+ * of either convering to validating files.
+ *
+ * @author Tobias Ternent
+ */
+public class MainApp {
+  private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
-    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
-
-    public static void main(String[] args) throws Exception {
-        log.info("Starting application...");
-        log.info("Program arguments: " + Arrays.toString(args));
-        CommandLine cmd = MainApp.parseArgs(args);
-        if (args.length > 0) {
-            if (cmd.hasOption(ARG_VALIDATION)) {
-                Validator.startValidation(cmd);
-            } else if (cmd.hasOption(ARG_CONVERSION)) {
-                Converter.startConversion(cmd);
-            } else if (cmd.hasOption(ARG_MESSAGE)) {
-                if (cmd.hasOption(ARG_REDIS)&& cmd.hasOption(ARG_REDIS_SERVER) && cmd.hasOption(ARG_REDIS_PASSWORD) && cmd.hasOption(ARG_REDIS_PORT)&& cmd.hasOption(ARG_REDIS_CHANNEL)&& cmd.hasOption(ARG_REDIS_MESSAGE) ) {
-                    Utility.notifyRedisChannel(cmd.getOptionValue(ARG_REDIS_SERVER), Integer.parseInt(cmd.getOptionValue(ARG_REDIS_PORT)), cmd.getOptionValue(ARG_REDIS_PASSWORD), cmd.getOptionValue(ARG_REDIS_CHANNEL), cmd.getOptionValue(ARG_REDIS_MESSAGE));
-                } else {
-                    log.error("Insufficient parameters provided for sending REDIS message.");
-                }
-            }
+  /**
+   * Main class that gets run. Parses command line arguments, starts either the converter or validation operations.
+   * @param args command line arguments
+   */
+  public static void main(String[] args) {
+    log.info("Starting application...");
+    log.info("Program arguments: " + Arrays.toString(args));
+    try {
+      CommandLine cmd = MainApp.parseArgs(args);
+      if (args.length > 0) {
+        if (cmd.hasOption(ARG_VALIDATION)) {
+          Validator.startValidation(cmd);
+        } else if (cmd.hasOption(ARG_CONVERSION)) {
+          Converter.startConversion(cmd);
+        } else if (cmd.hasOption(ARG_MESSAGE)) {
+          if (cmd.hasOption(ARG_REDIS) && cmd.hasOption(ARG_REDIS_SERVER) && cmd.hasOption(ARG_REDIS_PASSWORD) && cmd.hasOption(ARG_REDIS_PORT) && cmd.hasOption(ARG_REDIS_CHANNEL) && cmd.hasOption(ARG_REDIS_MESSAGE)) {
+            Utility.notifyRedisChannel(cmd.getOptionValue(ARG_REDIS_SERVER), Integer.parseInt(cmd.getOptionValue(ARG_REDIS_PORT)), cmd.getOptionValue(ARG_REDIS_PASSWORD), cmd.getOptionValue(ARG_REDIS_CHANNEL), cmd.getOptionValue(ARG_REDIS_MESSAGE));
+          } else {
+            log.error("Insufficient parameters provided for sending REDIS message.");
+          }
         }
-        Utility.exit(cmd);
+      }
+      Utility.exit(cmd);
+    } catch (Exception e) {
+      log.error("Exception while processing files: " + e);
     }
+  }
 
+  /**
+   * This method parses sets up and all the command line arguments to a CommandLine object.
+   * @param args the command line arguments.
+   * @return a CommandLine object of the parsed command line arguments.
+   * @throws ParseException if there are problems parsing the command line arguments.
+   */
     private static CommandLine parseArgs(String[] args) throws ParseException{
         Options options = new Options();
         options.addOption(ARG_VALIDATION, false, "start to validate a file");

@@ -3,8 +3,9 @@ package uk.ac.ebi.pride.toolsuite.pgconverter.utils;
 import java.io.Serializable;
 
 /**
- * @author Rui Wang
- * @version $Id$
+ * Refactored from the PRIDE PX Submission Pipeline, lists the overall information of a peak file.
+ *
+ * @author Tobias Ternent
  */
 public class PeakFileSummary implements Serializable {
     private String fileName;

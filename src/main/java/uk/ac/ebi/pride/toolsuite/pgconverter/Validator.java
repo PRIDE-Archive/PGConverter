@@ -31,7 +31,8 @@ import java.util.zip.GZIPInputStream;
 import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 
 /**
- * Created by tobias on 03/08/2016.
+ *
+ * @author Tobias Ternent
  */
 public class Validator {
 

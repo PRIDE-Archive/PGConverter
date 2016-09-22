@@ -8,7 +8,10 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 /**
- * Created by tobias on 03/08/2016.
+ * This class provides general utitilies for the PGConverter tool, such as:
+ * arguments, supported file types, REDIS messaging, and handling exiting the application.
+ *
+ * @author Tobias Ternent
  */
 public class Utility {
 
@@ -44,7 +47,9 @@ public class Utility {
     public static final String MS_SOFTWARE_NAME = "software";
     public static final String MS_INSTRUMENT_MODEL_NAME = "instrument model";
 
-
+    /**
+     * The supported file types.
+     */
     public enum FileType {MZID("mzid"), MZTAB("mztab"), PRIDEXML("xml"), ASQL("as"), PROBED("pro.bed"), BIGBED("bb"), UNKNOWN("");
         private String format;
 
@@ -57,6 +62,10 @@ public class Utility {
         }
     }
 
+    /**
+     * Handles exiting from the tool, and potentially messages REDIS if set.
+     * @param cmd
+     */
     public static void exit(CommandLine cmd) {
         if (cmd.hasOption(ARG_REDIS)) {
             notifyRedisChannel(cmd.getOptionValue(ARG_REDIS_SERVER), Integer.parseInt(cmd.getOptionValue(ARG_REDIS_PORT)),
@@ -66,6 +75,14 @@ public class Utility {
         System.exit(0);
     }
 
+    /**
+     * Publishes a success or failure message to the specified REDIS channel according to the credentials used.
+     * @param jedisServer the REDIS server name.
+     * @param jedisPort the REDIS server port.
+     * @param jedisPassword the REDIS password
+     * @param assayChannel the REDIS channel to post a message to.
+     * @param message the message content.
+     */
     public static void notifyRedisChannel(String jedisServer, int jedisPort, String jedisPassword, String assayChannel, String message) {
         try {
             log.info("Connecting to REDIS channel:" + assayChannel);

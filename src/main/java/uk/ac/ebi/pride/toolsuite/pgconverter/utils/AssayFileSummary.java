@@ -9,299 +9,591 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * This class describes the summary information of an assay file.
+ */
 public class AssayFileSummary implements Serializable {
-        private int id;
-        private String accession;
-        private String name;
-        private String shortLabel;
-        private int numberOfProteins;
-        private int numberOfPeptides;
-        private int numberOfSpectra;
-        private int numberOfUniquePeptides;
-        private int numberOfExistingIdentifiedSpectra;
-        private int numberOfIdentifiedSpectra;
-        private int numberofMissingSpectra;
-        private boolean spectrumMatchFragmentIons;
-        private final Set<Comparable> missingIdentifiedSpectraIds;
-        private boolean ms2Annotation;
-        private boolean chromatogram;
-        private final Set<AssayPTM> ptms;
-        private final Set<Instrument> instruments;
-        private final Set<Software> softwares;
-        private final Set<Contact> contacts;
-        private boolean proteinGroupPresent;
-        private String exampleProteinAccession;
-        private String searchDatabase;
-        private double deltaMzErrorRate;
-        private final Set<AssaySampleCvParam> samples;
-        private final Set<AssayQuantificationMethodCvParam> quantificationMethods;
-        private String experimentalFactor;
-        private final Set<PeakFileSummary> peakFileSummaries;
-        private final Set<AssayGroupCvParam> cvParams;
-        private final Set<AssayGroupUserParam> userParams;
+  private int id;
+  private String accession;
+  private String name;
+  private String shortLabel;
+  private int numberOfProteins;
+  private int numberOfPeptides;
+  private int numberOfSpectra;
+  private int numberOfUniquePeptides;
+  private int numberOfExistingIdentifiedSpectra;
+  private int numberOfIdentifiedSpectra;
+  private int numberofMissingSpectra;
+  private boolean spectrumMatchFragmentIons;
+  private final Set<Comparable> missingIdentifiedSpectraIds;
+  private boolean ms2Annotation;
+  private boolean chromatogram;
+  private final Set<AssayPTM> ptms;
+  private final Set<Instrument> instruments;
+  private final Set<Software> softwares;
+  private final Set<Contact> contacts;
+  private boolean proteinGroupPresent;
+  private String exampleProteinAccession;
+  private String searchDatabase;
+  private double deltaMzErrorRate;
+  private final Set<AssaySampleCvParam> samples;
+  private final Set<AssayQuantificationMethodCvParam> quantificationMethods;
+  private String experimentalFactor;
+  private final Set<PeakFileSummary> peakFileSummaries;
+  private final Set<AssayGroupCvParam> cvParams;
+  private final Set<AssayGroupUserParam> userParams;
 
-        public AssayFileSummary() {
-            this.id = -1;
-            this.accession = null;
-            this.name = null;
-            this.shortLabel = null;
-            this.numberOfProteins = 0;
-            this.numberOfPeptides = 0;
-            this.numberOfSpectra = 0;
-            this.numberOfUniquePeptides = 0;
-            this.numberOfExistingIdentifiedSpectra = 0;
-            this.numberOfIdentifiedSpectra = 0;
-            this.numberofMissingSpectra = -1;
-            this.spectrumMatchFragmentIons = true;
-            this.missingIdentifiedSpectraIds = new LinkedHashSet<>();
-            this.ms2Annotation = false;
-            this.chromatogram = false;
-            this.ptms = new LinkedHashSet<>();
-            this.instruments = new LinkedHashSet<>();
-            this.softwares = new LinkedHashSet<>();
-            this.contacts = new LinkedHashSet<>();
-            this.proteinGroupPresent = false;
-            this.samples = new LinkedHashSet<>();
-            this.quantificationMethods = new LinkedHashSet<>();
-            this.experimentalFactor = null;
-            this.peakFileSummaries = new LinkedHashSet<>();
-            this.cvParams = new LinkedHashSet<>();
-            this.userParams = new LinkedHashSet<>();
-        }
+  /**
+   * Default constructor, sets all the variables to default values.
+   *
+   * @author Tobias Ternent
+   */
+  public AssayFileSummary() {
+    this.id = -1;
+    this.accession = null;
+    this.name = null;
+    this.shortLabel = null;
+    this.numberOfProteins = 0;
+    this.numberOfPeptides = 0;
+    this.numberOfSpectra = 0;
+    this.numberOfUniquePeptides = 0;
+    this.numberOfExistingIdentifiedSpectra = 0;
+    this.numberOfIdentifiedSpectra = 0;
+    this.numberofMissingSpectra = -1;
+    this.spectrumMatchFragmentIons = true;
+    this.missingIdentifiedSpectraIds = new LinkedHashSet<>();
+    this.ms2Annotation = false;
+    this.chromatogram = false;
+    this.ptms = new LinkedHashSet<>();
+    this.instruments = new LinkedHashSet<>();
+    this.softwares = new LinkedHashSet<>();
+    this.contacts = new LinkedHashSet<>();
+    this.proteinGroupPresent = false;
+    this.samples = new LinkedHashSet<>();
+    this.quantificationMethods = new LinkedHashSet<>();
+    this.experimentalFactor = null;
+    this.peakFileSummaries = new LinkedHashSet<>();
+    this.cvParams = new LinkedHashSet<>();
+    this.userParams = new LinkedHashSet<>();
+  }
 
-        public int getId() {
-            return id;
-        }
+  /**
+   * Sets new numberofMissingSpectra.
+   *
+   * @param numberofMissingSpectra New value of numberofMissingSpectra.
+   */
+  public void setNumberofMissingSpectra(int numberofMissingSpectra) {
+    this.numberofMissingSpectra = numberofMissingSpectra;
+  }
 
-        public void setId(int id) {
-            this.id = id;
-        }
+  /**
+   * Gets searchDatabase.
+   *
+   * @return Value of searchDatabase.
+   */
+  public String getSearchDatabase() {
+    return searchDatabase;
+  }
 
-        public String getAccession() {
-            return accession;
-        }
+  /**
+   * Gets numberOfUniquePeptides.
+   *
+   * @return Value of numberOfUniquePeptides.
+   */
+  public int getNumberOfUniquePeptides() {
+    return numberOfUniquePeptides;
+  }
 
-        public void setAccession(String accession) {
-            this.accession = accession;
-        }
+  /**
+   * Gets cvParams.
+   *
+   * @return Value of cvParams.
+   */
+  public Set<AssayGroupCvParam> getCvParams() {
+    return cvParams;
+  }
 
-        public String getName() {
-            return name;
-        }
+  /**
+   * Gets numberOfExistingIdentifiedSpectra.
+   *
+   * @return Value of numberOfExistingIdentifiedSpectra.
+   */
+  public int getNumberOfExistingIdentifiedSpectra() {
+    return numberOfExistingIdentifiedSpectra;
+  }
 
-        public void setName(String name) {
-            this.name = name;
-        }
+  /**
+   * Sets new spectrumMatchFragmentIons.
+   *
+   * @param spectrumMatchFragmentIons New value of spectrumMatchFragmentIons.
+   */
+  public void setSpectrumMatchFragmentIons(boolean spectrumMatchFragmentIons) {
+    this.spectrumMatchFragmentIons = spectrumMatchFragmentIons;
+  }
 
-        public String getShortLabel() {
-            return shortLabel;
-        }
+  /**
+   * Gets experimentalFactor.
+   *
+   * @return Value of experimentalFactor.
+   */
+  public String getExperimentalFactor() {
+    return experimentalFactor;
+  }
 
-        public void setShortLabel(String shortLabel) {
-            this.shortLabel = shortLabel;
-        }
+  /**
+   * Sets new ms2Annotation.
+   *
+   * @param ms2Annotation New value of ms2Annotation.
+   */
+  public void setMs2Annotation(boolean ms2Annotation) {
+    this.ms2Annotation = ms2Annotation;
+  }
 
-        public int getNumberOfProteins() {
-            return numberOfProteins;
-        }
+  /**
+   * Sets new numberOfProteins.
+   *
+   * @param numberOfProteins New value of numberOfProteins.
+   */
+  public void setNumberOfProteins(int numberOfProteins) {
+    this.numberOfProteins = numberOfProteins;
+  }
 
-        public void setNumberOfProteins(int numberOfProteins) {
-            this.numberOfProteins = numberOfProteins;
-        }
+  /**
+   * Gets ptms.
+   *
+   * @return Value of ptms.
+   */
+  public Set<AssayPTM> getPtms() {
+    return ptms;
+  }
 
-        public int getNumberOfPeptides() {
-            return numberOfPeptides;
-        }
+  /**
+   * Gets exampleProteinAccession.
+   *
+   * @return Value of exampleProteinAccession.
+   */
+  public String getExampleProteinAccession() {
+    return exampleProteinAccession;
+  }
 
-        public void setNumberOfPeptides(int numberOfPeptides) {
-            this.numberOfPeptides = numberOfPeptides;
-        }
+  /**
+   * Gets spectrumMatchFragmentIons.
+   *
+   * @return Value of spectrumMatchFragmentIons.
+   */
+  public boolean isSpectrumMatchFragmentIons() {
+    return spectrumMatchFragmentIons;
+  }
 
-        public int getNumberOfSpectra() {
-            return numberOfSpectra;
-        }
+  /**
+   * Sets new shortLabel.
+   *
+   * @param shortLabel New value of shortLabel.
+   */
+  public void setShortLabel(String shortLabel) {
+    this.shortLabel = shortLabel;
+  }
 
-        public void setNumberOfSpectra(int numberOfSpectra) {
-            this.numberOfSpectra = numberOfSpectra;
-        }
+  /**
+   * Gets missingIdentifiedSpectraIds.
+   *
+   * @return Value of missingIdentifiedSpectraIds.
+   */
+  public Set<Comparable> getMissingIdentifiedSpectraIds() {
+    return missingIdentifiedSpectraIds;
+  }
 
-        public int getNumberOfUniquePeptides() {
-            return numberOfUniquePeptides;
-        }
+  /**
+   * Sets new deltaMzErrorRate.
+   *
+   * @param deltaMzErrorRate New value of deltaMzErrorRate.
+   */
+  public void setDeltaMzErrorRate(double deltaMzErrorRate) {
+    this.deltaMzErrorRate = deltaMzErrorRate;
+  }
 
-        public void setNumberOfUniquePeptides(int numberOfUniquePeptides) {
-            this.numberOfUniquePeptides = numberOfUniquePeptides;
-        }
+  /**
+   * Gets numberOfIdentifiedSpectra.
+   *
+   * @return Value of numberOfIdentifiedSpectra.
+   */
+  public int getNumberOfIdentifiedSpectra() {
+    return numberOfIdentifiedSpectra;
+  }
 
-        public int getNumberOfExistingIdentifiedSpectra() {
-            return numberOfExistingIdentifiedSpectra;
-        }
+  /**
+   * Sets new exampleProteinAccession.
+   *
+   * @param exampleProteinAccession New value of exampleProteinAccession.
+   */
+  public void setExampleProteinAccession(String exampleProteinAccession) {
+    this.exampleProteinAccession = exampleProteinAccession;
+  }
 
-        public void setNumberOfExistingIdentifiedSpectra(int numberOfExistingIdentifiedSpectra) {
-            this.numberOfExistingIdentifiedSpectra = numberOfExistingIdentifiedSpectra;
-        }
+  /**
+   * Gets id.
+   *
+   * @return Value of id.
+   */
+  public int getId() {
+    return id;
+  }
 
-        public int getNumberOfIdentifiedSpectra() {
-            return numberOfIdentifiedSpectra;
-        }
+  /**
+   * Sets new numberOfPeptides.
+   *
+   * @param numberOfPeptides New value of numberOfPeptides.
+   */
+  public void setNumberOfPeptides(int numberOfPeptides) {
+    this.numberOfPeptides = numberOfPeptides;
+  }
 
-        public void setNumberOfIdentifiedSpectra(int numberOfIdentifiedSpectra) {
-            this.numberOfIdentifiedSpectra = numberOfIdentifiedSpectra;
-        }
+  /**
+   * Sets new experimentalFactor.
+   *
+   * @param experimentalFactor New value of experimentalFactor.
+   */
+  public void setExperimentalFactor(String experimentalFactor) {
+    this.experimentalFactor = experimentalFactor;
+  }
 
-        public boolean isSpectrumMatchFragmentIons() {
-            return spectrumMatchFragmentIons;
-        }
+  /**
+   * Gets numberOfProteins.
+   *
+   * @return Value of numberOfProteins.
+   */
+  public int getNumberOfProteins() {
+    return numberOfProteins;
+  }
 
-        public void setSpectrumMatchFragmentIons(boolean spectrumMatchFragmentIons) {
-            this.spectrumMatchFragmentIons = spectrumMatchFragmentIons;
-        }
+  /**
+   * Gets quantificationMethods.
+   *
+   * @return Value of quantificationMethods.
+   */
+  public Set<AssayQuantificationMethodCvParam> getQuantificationMethods() {
+    return quantificationMethods;
+  }
 
-        public Set<Comparable> getMissingIdentifiedSpectraIds() {
-            return missingIdentifiedSpectraIds;
-        }
+  /**
+   * Gets shortLabel.
+   *
+   * @return Value of shortLabel.
+   */
+  public String getShortLabel() {
+    return shortLabel;
+  }
 
-        public void addMissingIdentifiedSpectraIds(Collection<Comparable> spectraIds) {
-            this.missingIdentifiedSpectraIds.addAll(spectraIds);
-        }
+  /**
+   * Sets new numberOfIdentifiedSpectra.
+   *
+   * @param numberOfIdentifiedSpectra New value of numberOfIdentifiedSpectra.
+   */
+  public void setNumberOfIdentifiedSpectra(int numberOfIdentifiedSpectra) {
+    this.numberOfIdentifiedSpectra = numberOfIdentifiedSpectra;
+  }
 
-        public int getNumberofMissingSpectra() {
-            return numberofMissingSpectra;
-        }
+  /**
+   * Gets numberOfSpectra.
+   *
+   * @return Value of numberOfSpectra.
+   */
+  public int getNumberOfSpectra() {
+    return numberOfSpectra;
+  }
 
-        public void setNumberofMissingSpectra(int numberofMissingSpectra) {
-            this.numberofMissingSpectra = numberofMissingSpectra;
-        }
+  /**
+   * Gets samples.
+   *
+   * @return Value of samples.
+   */
+  public Set<AssaySampleCvParam> getSamples() {
+    return samples;
+  }
 
-        public boolean hasMs2Annotation() {
-            return ms2Annotation;
-        }
+  /**
+   * Gets deltaMzErrorRate.
+   *
+   * @return Value of deltaMzErrorRate.
+   */
+  public double getDeltaMzErrorRate() {
+    return deltaMzErrorRate;
+  }
 
-        public void setMs2Annotation(boolean ms2Annotation) {
-            this.ms2Annotation = ms2Annotation;
-        }
+  /**
+   * Sets new searchDatabase.
+   *
+   * @param searchDatabase New value of searchDatabase.
+   */
+  public void setSearchDatabase(String searchDatabase) {
+    this.searchDatabase = searchDatabase;
+  }
 
-        public boolean hasChromatogram() {
-            return chromatogram;
-        }
+  /**
+   * Gets accession.
+   *
+   * @return Value of accession.
+   */
+  public String getAccession() {
+    return accession;
+  }
 
-        public void setChromatogram(boolean chromatogram) {
-            this.chromatogram = chromatogram;
-        }
+  /**
+   * Gets contacts.
+   *
+   * @return Value of contacts.
+   */
+  public Set<Contact> getContacts() {
+    return contacts;
+  }
 
-        public Set<AssayPTM> getPtms() {
-            return ptms;
-        }
+  /**
+   * Sets new numberOfUniquePeptides.
+   *
+   * @param numberOfUniquePeptides New value of numberOfUniquePeptides.
+   */
+  public void setNumberOfUniquePeptides(int numberOfUniquePeptides) {
+    this.numberOfUniquePeptides = numberOfUniquePeptides;
+  }
 
-        public void addPtms(Collection<AssayPTM> ptms) {
-            this.ptms.addAll(ptms);
-        }
+  /**
+   * Sets new chromatogram.
+   *
+   * @param chromatogram New value of chromatogram.
+   */
+  public void setChromatogram(boolean chromatogram) {
+    this.chromatogram = chromatogram;
+  }
 
-        public Set<Instrument> getInstruments() {
-            return instruments;
-        }
+  /**
+   * Sets new proteinGroupPresent.
+   *
+   * @param proteinGroupPresent New value of proteinGroupPresent.
+   */
+  public void setProteinGroupPresent(boolean proteinGroupPresent) {
+    this.proteinGroupPresent = proteinGroupPresent;
+  }
 
-        public void addInstruments(Collection<Instrument> instruments) {
-            this.instruments.addAll(instruments);
-        }
+  /**
+   * Gets name.
+   *
+   * @return Value of name.
+   */
+  public String getName() {
+    return name;
+  }
 
-        public Set<Software> getSoftwares() {
-            return softwares;
-        }
+  /**
+   * Gets proteinGroupPresent.
+   *
+   * @return Value of proteinGroupPresent.
+   */
+  public boolean isProteinGroupPresent() {
+    return proteinGroupPresent;
+  }
 
-        public void addSoftwares(Collection<Software> softwares) {
-            this.softwares.addAll(softwares);
-        }
+  /**
+   * Gets ms2Annotation.
+   *
+   * @return Value of ms2Annotation.
+   */
+  public boolean isMs2Annotation() {
+    return ms2Annotation;
+  }
 
-        public Set<Contact> getContacts() {
-            return contacts;
-        }
+  /**
+   * Gets numberOfPeptides.
+   *
+   * @return Value of numberOfPeptides.
+   */
+  public int getNumberOfPeptides() {
+    return numberOfPeptides;
+  }
 
-        public void addContacts(Collection<Contact> contacts) {
-            this.contacts.addAll(contacts);
-        }
+  /**
+   * Gets peakFileSummaries.
+   *
+   * @return Value of peakFileSummaries.
+   */
+  public Set<PeakFileSummary> getPeakFileSummaries() {
+    return peakFileSummaries;
+  }
 
-        public boolean isProteinGroupPresent() {
-            return proteinGroupPresent;
-        }
+  /**
+   * Gets userParams.
+   *
+   * @return Value of userParams.
+   */
+  public Set<AssayGroupUserParam> getUserParams() {
+    return userParams;
+  }
 
-        public void setProteinGroupPresent(boolean proteinGroupPresent) {
-            this.proteinGroupPresent = proteinGroupPresent;
-        }
+  /**
+   * Sets new name.
+   *
+   * @param name New value of name.
+   */
+  public void setName(String name) {
+    this.name = name;
+  }
 
-        public String getExampleProteinAccession() {
-            return exampleProteinAccession;
-        }
+  /**
+   * Gets softwares.
+   *
+   * @return Value of softwares.
+   */
+  public Set<Software> getSoftwares() {
+    return softwares;
+  }
 
-        public void setExampleProteinAccession(String exampleProteinAccession) {
-            this.exampleProteinAccession = exampleProteinAccession;
-        }
+  /**
+   * Gets instruments.
+   *
+   * @return Value of instruments.
+   */
+  public Set<Instrument> getInstruments() {
+    return instruments;
+  }
 
-        public String getSearchDatabase() {
-            return searchDatabase;
-        }
+  /**
+   * Sets new numberOfExistingIdentifiedSpectra.
+   *
+   * @param numberOfExistingIdentifiedSpectra New value of numberOfExistingIdentifiedSpectra.
+   */
+  public void setNumberOfExistingIdentifiedSpectra(int numberOfExistingIdentifiedSpectra) {
+    this.numberOfExistingIdentifiedSpectra = numberOfExistingIdentifiedSpectra;
+  }
 
-        public void setSearchDatabase(String searchDatabase) {
-            this.searchDatabase = searchDatabase;
-        }
+  /**
+   * Gets numberofMissingSpectra.
+   *
+   * @return Value of numberofMissingSpectra.
+   */
+  public int getNumberofMissingSpectra() {
+    return numberofMissingSpectra;
+  }
 
-        public double getDeltaMzErrorRate() {
-            return deltaMzErrorRate;
-        }
+  /**
+   * Gets chromatogram.
+   *
+   * @return Value of chromatogram.
+   */
+  public boolean isChromatogram() {
+    return chromatogram;
+  }
 
-        public void setDeltaMzErrorRate(double deltaMzErrorRate) {
-            this.deltaMzErrorRate = deltaMzErrorRate;
-        }
+  /**
+   * Has chromatogram.
+   *
+   * @return Value of chromatogram.
+   */
+  public boolean hasChromatogram() {
+    return chromatogram;
+  }
+  /**
+   * Sets new accession.
+   *
+   * @param accession New value of accession.
+   */
+  public void setAccession(String accession) {
+    this.accession = accession;
+  }
 
-        public Set<AssaySampleCvParam> getSamples() {
-            return samples;
-        }
+  /**
+   * Sets new numberOfSpectra.
+   *
+   * @param numberOfSpectra New value of numberOfSpectra.
+   */
+  public void setNumberOfSpectra(int numberOfSpectra) {
+    this.numberOfSpectra = numberOfSpectra;
+  }
 
-        public void addSamples(Collection<AssaySampleCvParam> samples) {
-            this.samples.addAll(samples);
-        }
+  /**
+   * Sets new id.
+   *
+   * @param id New value of id.
+   */
+  public void setId(int id) {
+    this.id = id;
+  }
 
-        public Set<AssayQuantificationMethodCvParam> getQuantificationMethods() {
-            return quantificationMethods;
-        }
+  /**
+   * Adds PTMs.
+   * @param ptms New PTMs to add.
+   */
+  public void addPtms(Collection<AssayPTM> ptms) {
+    this.ptms.addAll(ptms);
+  }
 
-        public void addQuantificationMethods(Collection<AssayQuantificationMethodCvParam> quantificationMethods) {
-            this.quantificationMethods.addAll(quantificationMethods);
-        }
+  /**
+   * Adds Instruments.
+   * @param instruments New instruments to add.
+   */
+  public void addInstruments(Collection<Instrument> instruments) {
+    this.instruments.addAll(instruments);
+  }
 
-        public String getExperimentalFactor() {
-            return experimentalFactor;
-        }
+  /**
+   * Adds Software.
+   * @param software New software to add.
+   */
+  public void addSoftwares(Collection<Software> software) {
+    this.softwares.addAll(softwares);
+  }
 
-        public void setExperimentalFactor(String experimentalFactor) {
-            this.experimentalFactor = experimentalFactor;
-        }
+  /**
+   * Adds Contacts.
+   * @param contacts New contacts to add.
+   */
+  public void addContacts(Collection<Contact> contacts) {
+     this.contacts.addAll(contacts);
+  }
 
-        public Set<PeakFileSummary> getPeakFileSummaries() {
-            return peakFileSummaries;
-        }
+  /**
+   * Adds AssaySampleCvParam samples.
+   * @param samples New samples to add.
+   */
+  public void addSamples(Collection<AssaySampleCvParam> samples) {
+    this.samples.addAll(samples);
+  }
 
-        public void addPeakFileSummary(PeakFileSummary peakFileSummary) {
-            this.peakFileSummaries.add(peakFileSummary);
-        }
+  /**
+   * Adds AssayQuantificationMethodCvParam quantification methods.
+   * @param quantificationMethods New quantification methods to add.
+   */
+  public void addQuantificationMethods(Collection<AssayQuantificationMethodCvParam> quantificationMethods) {
+    this.quantificationMethods.addAll(quantificationMethods);
+  }
 
-        public void addPeakFileSummaries(Collection<PeakFileSummary> peakFileSummaries) {
-            this.peakFileSummaries.addAll(peakFileSummaries);
-        }
+  /**
+   * Adds PeakFileSummaries.
+   * @param peakFileSummary New peakFileSummary to add.
+   */
+  public void addPeakFileSummary(PeakFileSummary peakFileSummary) {
+    this.peakFileSummaries.add(peakFileSummary);
+  }
 
-        public Set<AssayGroupCvParam> getCvParams() {
-            return cvParams;
-        }
+  /**
+   * Adds PeakFileSummaries
+   * @param peakFileSummaries New peak file summaries to add.
+   */
+  public void addPeakFileSummaries(Collection<PeakFileSummary> peakFileSummaries) {
+    this.peakFileSummaries.addAll(peakFileSummaries);
+  }
 
-        public void addCvParams(Collection<AssayGroupCvParam> cvParams) {
-            this.cvParams.addAll(cvParams);
-        }
+  /**
+   * Adds AssayGroupCvParams cvParams.
+   * @param cvParams New cv Params to add.
+   */
+  public void addCvParams(Collection<AssayGroupCvParam> cvParams) {
+     this.cvParams.addAll(cvParams);
+  }
 
-        public Set<AssayGroupUserParam> getUserParams() {
-            return userParams;
-        }
-
-        public void addUserParams(Collection<AssayGroupUserParam> userParams) {
-            this.userParams.addAll(userParams);
-        }
-    }
+  /**
+   * Adds AssayGroupUserParam userParams.
+   * @param userParams New userParams to add.
+   */
+  public void addUserParams(Collection<AssayGroupUserParam> userParams) {
+    this.userParams.addAll(userParams);
+  }
+}
