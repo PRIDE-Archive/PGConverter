@@ -1,7 +1,3 @@
-/**
- * Created by tobias on 22/09/2016.
- */
-
 import org.junit.Test;
 import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
 import uk.ac.ebi.pride.toolsuite.pgconverter.Validator;
@@ -11,6 +7,12 @@ import java.net.URL;
 
 import static org.junit.Assert.assertTrue;
 import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
+
+/**
+ * This class contains unit tests for file format validation.
+ *
+ * @author Tobias Ternent
+ */
 
 public class ValidatorTest {
 
@@ -35,4 +37,6 @@ public class ValidatorTest {
     Validator.startValidation(MainApp.parseArgs(args));
     assertTrue("No errors reported during the conversion from  mzIdentML to MzTab", reportFile.exists());
   }
+
+  //TODO PRIDE XML validation, proBed validation, mzTab validation?
 }
