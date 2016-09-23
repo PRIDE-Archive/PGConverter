@@ -19,6 +19,7 @@ public class ConverterTest {
 
   /**
    * This test converts an example mzIdentML file into an mzTab file.
+   *
    * @throws Exception if there are problems opening the example file.
    */
   @Test
@@ -27,15 +28,33 @@ public class ConverterTest {
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
-    File inputFile = new File(url.toURI());
+    File inputMzidFile = new File(url.toURI());
     File outputFile = File.createTempFile("test", ".mztab");
-    String[] args = new String[]{"-" + ARG_CONVERSION, "-" + ARG_INPUTFILE, inputFile.getPath(), "-" + ARG_OUTPUTFILE, outputFile.getPath()};
+    String[] args = new String[]{"-" + ARG_CONVERSION, "-" + ARG_INPUTFILE, inputMzidFile.getPath(), "-" + ARG_OUTPUTFILE, outputFile.getPath()};
     Converter.startConversion(MainApp.parseArgs(args));
-
     MzTabControllerImpl mzTabController = new MzTabControllerImpl(outputFile);
     mzTabController.close();
     assertTrue("No errors reported during the conversion from  mzIdentML to MzTab", outputFile.exists());
   }
 
-  //TODO PRIDE XML to mzTab validation, mzTab to proBed validation? mzIdentML to proBed validation?
+  /**
+   * This test converts an example PRIDE XML file into an mzTab file.
+   *
+   * @throws Exception if there are problems opening the example file.
+   */
+  @Test
+  public void testConvertPridexmloMztab() throws Exception{
+    URL url = ConverterTest.class.getClassLoader().getResource("test.xml");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputPridexmlFile = new File(url.toURI());
+    File outputFile = File.createTempFile("test", ".mztab");
+    String[] args = new String[]{"-" + ARG_CONVERSION, "-" + ARG_INPUTFILE, inputPridexmlFile.getPath(), "-" + ARG_OUTPUTFILE, outputFile.getPath()};
+    Converter.startConversion(MainApp.parseArgs(args));
+    MzTabControllerImpl mzTabController = new MzTabControllerImpl(outputFile);
+    mzTabController.close();
+    assertTrue("No errors reported during the conversion from  mzIdentML to MzTab", outputFile.exists());
+  }
+  //TODO mzTab to proBed conversion? mzIdentML to proBed validation?
 }
