@@ -72,7 +72,6 @@ public class Utility {
                          cmd.getOptionValue(ARG_REDIS_PASSWORD), cmd.getOptionValue(ARG_REDIS_CHANNEL), cmd.getOptionValue(ARG_REDIS_MESSAGE));
       }
     log.info("Exiting application.");
-     System.exit(0);
   }
 
   /**
