@@ -24,7 +24,6 @@ import java.util.*;
  * @author Tobias Ternent
  */
 public final class DataConversionUtil {
-
     private static final Logger logger = LoggerFactory.getLogger(DataConversionUtil.class);
 
     /**

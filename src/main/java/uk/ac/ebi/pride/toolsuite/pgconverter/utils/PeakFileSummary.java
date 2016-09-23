@@ -8,37 +8,37 @@ import java.io.Serializable;
  * @author Tobias Ternent
  */
 public class PeakFileSummary implements Serializable {
-    private String fileName;
-    private boolean missing;
-    private int numberOfSpectra;
+  private String fileName;
+  private boolean missing;
+  private int numberOfSpectra;
 
-    public PeakFileSummary(String fileName, boolean missing, int numberOfSpectra) {
-        this.fileName = fileName;
-        this.missing = missing;
-        this.numberOfSpectra = numberOfSpectra;
-    }
+  public PeakFileSummary(String fileName, boolean missing, int numberOfSpectra) {
+    this.fileName = fileName;
+    this.missing = missing;
+    this.numberOfSpectra = numberOfSpectra;
+  }
 
-    public String getFileName() {
-        return fileName;
-    }
+  public String getFileName() {
+    return fileName;
+  }
 
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
+  public void setFileName(String fileName) {
+    this.fileName = fileName;
+  }
 
-    public boolean isMissing() {
-        return missing;
-    }
+  public boolean isMissing() {
+    return missing;
+  }
 
-    public void setMissing(boolean missing) {
-        this.missing = missing;
-    }
+  public void setMissing(boolean missing) {
+    this.missing = missing;
+  }
 
-    public int getNumberOfSpectra() {
-        return numberOfSpectra;
-    }
+  public int getNumberOfSpectra() {
+    return numberOfSpectra;
+  }
 
-    public void setNumberOfSpectra(int numberOfSpectra) {
-        this.numberOfSpectra = numberOfSpectra;
-    }
+  public void setNumberOfSpectra(int numberOfSpectra) {
+    this.numberOfSpectra = numberOfSpectra;
+  }
 }

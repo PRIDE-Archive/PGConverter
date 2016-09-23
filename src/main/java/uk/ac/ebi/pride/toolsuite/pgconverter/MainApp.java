@@ -19,6 +19,7 @@ public class MainApp {
 
   /**
    * Main class that gets run. Parses command line arguments, starts either the converter or validation operations.
+   *
    * @param args command line arguments
    */
   public static void main(String[] args) {
@@ -47,33 +48,35 @@ public class MainApp {
 
   /**
    * This method parses sets up and all the command line arguments to a CommandLine object.
+   *
    * @param args the command line arguments.
    * @return a CommandLine object of the parsed command line arguments.
    * @throws ParseException if there are problems parsing the command line arguments.
    */
-    private static CommandLine parseArgs(String[] args) throws ParseException{
-        Options options = new Options();
-        options.addOption(ARG_VALIDATION, false, "start to validate a file");
-        options.addOption(ARG_CONVERSION, false, "start to convert a file");
-        options.addOption(ARG_MESSAGE, false, "start to message redis");
-        options.addOption(ARG_MZID, true, "mzid file");
-        options.addOption(ARG_PEAK, true, "peak file");
-        options.addOption(ARG_PEAKS, true, "peak files");
-        options.addOption(ARG_PRIDEXML, true, "pride xml file");
-        options.addOption(ARG_MZTAB, true, "mztab file");
-        options.addOption(ARG_PROBED, true, "probed file");
-        options.addOption(ARG_OUTPUTFILE, true, "exact output file");
-        options.addOption(ARG_OUTPUTTFORMAT, true, "exact output file format");
-        options.addOption(ARG_INPUTFILE, true, "exact input file");
-        options.addOption(ARG_CHROMSIZES, true, "chrom sizes file");
-        options.addOption(ARG_REPORTFILE, true, "report file");
-        options.addOption(ARG_REDIS, false, "Will message redis");
-        options.addOption(ARG_REDIS_SERVER, true, "Redis server");
-        options.addOption(ARG_REDIS_PORT, true, "Redis port");
-        options.addOption(ARG_REDIS_PASSWORD, true, "Redis password");
-        options.addOption(ARG_REDIS_CHANNEL, true, "Redis channel");
-        options.addOption(ARG_REDIS_MESSAGE, true, "Redis message");
-        CommandLineParser parser = new DefaultParser();
-        return parser.parse(options, args);
-    }
+  public static CommandLine parseArgs(String[] args) throws ParseException{
+    Options options = new Options();
+    options.addOption(ARG_VALIDATION, false, "start to validate a file");
+    options.addOption(ARG_CONVERSION, false, "start to convert a file");
+    options.addOption(ARG_MESSAGE, false, "start to message redis");
+    options.addOption(ARG_MZID, true, "mzid file");
+    options.addOption(ARG_PEAK, true, "peak file");
+    options.addOption(ARG_PEAKS, true, "peak files");
+    options.addOption(ARG_PRIDEXML, true, "pride xml file");
+    options.addOption(ARG_MZTAB, true, "mztab file");
+    options.addOption(ARG_PROBED, true, "probed file");
+    options.addOption(ARG_OUTPUTFILE, true, "exact output file");
+    options.addOption(ARG_OUTPUTTFORMAT, true, "exact output file format");
+    options.addOption(ARG_INPUTFILE, true, "exact input file");
+    options.addOption(ARG_CHROMSIZES, true, "chrom sizes file");
+    options.addOption(ARG_REPORTFILE, true, "report file");
+    options.addOption(ARG_REDIS, false, "Will message redis");
+    options.addOption(ARG_REDIS_SERVER, true, "Redis server");
+    options.addOption(ARG_REDIS_PORT, true, "Redis port");
+    options.addOption(ARG_REDIS_PASSWORD, true, "Redis password");
+    options.addOption(ARG_REDIS_CHANNEL, true, "Redis channel");
+    options.addOption(ARG_REDIS_MESSAGE, true, "Redis message");
+    options.addOption(ARG_SKIP_SERIALIZATION, false, "Redis message");
+    CommandLineParser parser = new DefaultParser();
+    return parser.parse(options, args);
+  }
 }
