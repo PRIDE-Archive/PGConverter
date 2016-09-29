@@ -178,17 +178,16 @@ public class Validator {
       mzIdentMLController.addMSController(dataAccessControllerFiles);
       Set<String> uniquePeptides = new HashSet<>();
       Set<CvParam> ptms = new HashSet<>();
-      final int NUMBER_OF_CHECKS=10;
+      final int NUMBER_OF_CHECKS=100;
       List<Boolean> randomChecks = new ArrayList<>();
       IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add( mzIdentMLController.checkRandomSpectraByDeltaMassThreshold(1, 4.0)));
-      boolean passedRandomCheck = true;
       int checkFalseCounts = 0;
       for (Boolean check : randomChecks) {
         if (!check) {
           checkFalseCounts++;
         }
       }
-      assayFileSummary.setDeltaMzErrorRate((double) Math.round((double) checkFalseCounts / NUMBER_OF_CHECKS));
+      assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / NUMBER_OF_CHECKS)*100)/100);
       report.setFileName(file.getAbsolutePath());
       assayFileSummary.setNumberOfIdentifiedSpectra(mzIdentMLController.getNumberOfIdentifiedSpectra());
       assayFileSummary.setNumberOfPeptides(mzIdentMLController.getNumberOfPeptides());
