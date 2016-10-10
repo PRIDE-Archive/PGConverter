@@ -25,7 +25,7 @@ import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 public class ValidatorTest {
 
   /**
-   * This test validated one example mzIdentML file which is related to a single peak .mgf file.
+   * This test validates one example mzIdentML file which is related to a single peak .mgf file.
    *
    * @throws Exception if there are problems opening the example file.
    */
@@ -44,11 +44,11 @@ public class ValidatorTest {
     File reportFile = File.createTempFile("testMzid", ".log");
     String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_MZID, inputMzidFile.getPath(), "-" + ARG_PEAK, inputMgfFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
     Validator.startValidation(MainApp.parseArgs(args));
-    assertTrue("No errors reported during the conversion from  mzIdentML to MzTab", reportStatus(reportFile));
+    assertTrue("No errors reported during the validation of the mzIdentML file", reportStatus(reportFile));
   }
 
   /**
-   * This test validated one example PRIDE XML file.
+   * This test validates one example PRIDE XML file.
    *
    * @throws Exception if there are problems opening the example file.
    */
@@ -62,7 +62,30 @@ public class ValidatorTest {
     File reportFile = File.createTempFile("testPridexml", ".log");
     String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_PRIDEXML, inputPridexmlFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
     Validator.startValidation(MainApp.parseArgs(args));
-    assertTrue("No errors reported during the conversion from mzIdentML to MzTab", reportStatus(reportFile));
+    assertTrue("No errors reported during the validation of the PRIDE XML", reportStatus(reportFile));
+  }
+
+  /**
+   * This test validates one example mzTab file.
+   *
+   * @throws Exception if there are problems opening the example file.
+   */
+  @Test
+  public void testMztabValidator() throws Exception{
+    URL url = ConverterTest.class.getClassLoader().getResource("test.mztab");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputMztabFile = new File(url.toURI());
+    url = ConverterTest.class.getClassLoader().getResource("test.mgf");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputMgfFile = new File(url.toURI());
+    File reportFile = File.createTempFile("testMztab", ".log");
+    String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_MZTAB, inputMztabFile.getPath(), "-" + ARG_PEAK, inputMgfFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
+    Validator.startValidation(MainApp.parseArgs(args));
+    assertTrue("No errors reported during the validation of the mzTab file", reportStatus(reportFile));
   }
 
   private boolean reportStatus(File report) throws Exception{
@@ -92,5 +115,5 @@ public class ValidatorTest {
     return result;
   }
 
-  //TODO proBed validation, mzTab validation?
+  //TODO proBed validation?
 }

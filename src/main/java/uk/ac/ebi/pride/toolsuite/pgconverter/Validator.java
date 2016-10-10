@@ -40,6 +40,7 @@ public class Validator {
 
   private static final Logger log = LoggerFactory.getLogger(Validator.class);
 
+
   /**
    * This class parses the command line arguments and beings the file validation.
    *
@@ -50,9 +51,11 @@ public class Validator {
     if (cmd.hasOption(ARG_MZID)) {
       validateMzdentML(cmd);
       } else if (cmd.hasOption(ARG_PRIDEXML)) {
-        validatePrideXML(cmd);
+      validatePrideXML(cmd);
       } else if (cmd.hasOption(ARG_MZTAB)) {
-        log.info("Unable to validate mzTab files"); //TODO
+      validateMzTab(cmd);
+    } else {
+      log.error("Unable to validate unknown input file type");
     }
   }
 
@@ -86,34 +89,9 @@ public class Validator {
    * @throws IOException if there are problems reading or writing to the file system.
    */
   public static void validateMzdentML(CommandLine cmd) throws IOException{
-    List<File> filesToValidate = new ArrayList<File>();
-    List<File> peakFiles = new ArrayList<>();
     File file = new File(cmd.getOptionValue(ARG_MZID));
-    if (file.isDirectory()) {
-      log.error("Unable to validate against directory of mzid files.");
-    } else {
-      filesToValidate.add(file);
-    }
-    filesToValidate = extractZipFiles(filesToValidate);
-    if (cmd.hasOption("peak") || cmd.hasOption("peaks")) {
-      String[] peakFilesString = cmd.hasOption("peak") ? cmd.getOptionValues("peak")
-                               : cmd.hasOption("peaks") ?  cmd.getOptionValue("peaks").split("##") : new String[0];
-      for (String aPeakFilesString : peakFilesString) {
-        File peakFile = new File(aPeakFilesString);
-        if (peakFile.isDirectory()) {
-          File[] listFiles = peakFile.listFiles(File::isFile);
-          if (listFiles!=null) {
-            peakFiles.addAll(Arrays.asList(listFiles));
-          }
-        } else {
-          peakFiles.add(peakFile);
-          log.info("Added peak file: " + peakFile.getPath());
-        }
-      }
-      peakFiles = extractZipFiles(peakFiles);
-    } else {
-      log.error("Peak file not supplied with mzIdentML file.");
-    }
+    List<File> filesToValidate = getFilesToValidate(file);
+    List<File> peakFiles = getPeakFiles(cmd);
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
     FileType fileType = getFileType(filesToValidate.get(0));
@@ -162,8 +140,85 @@ public class Validator {
     outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
   }
 
+
   /**
-   * This method validates a specified mzIdentML file.
+   * This method validated an mzIdentML file.
+   *
+   * @param cmd the command line arguments.
+   * @throws IOException if there are problems reading or writing to the file system.
+   */
+  private static void validateMzTab(CommandLine cmd) throws IOException{
+    File file = new File(cmd.getOptionValue(ARG_MZTAB));
+    List<File> filesToValidate = getFilesToValidate(file);
+    List<File> peakFiles = getPeakFiles(cmd);
+    AssayFileSummary assayFileSummary = new AssayFileSummary();
+    Report report = new Report();
+    FileType fileType = getFileType(filesToValidate.get(0));
+    if (fileType.equals(FileType.MZTAB)) {
+      Object[] validation = validateMztabFile(filesToValidate.get(0), peakFiles);
+      report = (Report) validation[0];
+      assayFileSummary = (AssayFileSummary) validation[1];
+    } else {
+      String message = "ERROR: Supplied -mztab file is not a valid mzIdentML file: " + filesToValidate.get(0);
+      log.error(message);
+      report.setStatus(message);
+    }
+    File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
+    outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
+  }
+
+  /**
+   * This method gets all the input file ready for validation, if it is extracted.
+   *
+   * @param file the input file for validation.
+   * @return List of extracted files for validation.
+   * @throws IOException if there are problems reading or writing to the file system.
+   */
+  private static List<File> getFilesToValidate(File file) throws IOException {
+    List<File> filesToValidate = new ArrayList<>();
+    if (file.isDirectory()) {
+      log.error("Unable to validate against directory of mzid files.");
+    } else {
+      filesToValidate.add(file);
+    }
+    filesToValidate = extractZipFiles(filesToValidate);
+    return filesToValidate;
+  }
+
+  /**
+   * This method gets a list of providede peak files.
+   *
+   * @param cmd the command line arguments.
+   * @return List of peak files.
+   * @throws IOException if there are problems reading or writing to the file system.
+   */
+  private static List<File> getPeakFiles(CommandLine cmd) throws IOException {
+    List<File> peakFiles = new ArrayList<>();
+    if (cmd.hasOption("peak") || cmd.hasOption("peaks")) {
+      String[] peakFilesString = cmd.hasOption("peak") ? cmd.getOptionValues("peak")
+          : cmd.hasOption("peaks") ?  cmd.getOptionValue("peaks").split("##") : new String[0];
+      for (String aPeakFilesString : peakFilesString) {
+        File peakFile = new File(aPeakFilesString);
+        if (peakFile.isDirectory()) {
+          File[] listFiles = peakFile.listFiles(File::isFile);
+          if (listFiles!=null) {
+            peakFiles.addAll(Arrays.asList(listFiles));
+          }
+        } else {
+          peakFiles.add(peakFile);
+          log.info("Added peak file: " + peakFile.getPath());
+        }
+      }
+      peakFiles = extractZipFiles(peakFiles);
+    } else {
+      log.error("Peak file not supplied with mzIdentML file.");
+    }
+    return peakFiles;
+  }
+
+
+  /**
+   * This method validates an input mzIdentML file.
    *
    * @param file the input mzIdentML file.
    * @param dataAccessControllerFiles the related peak files.
@@ -355,6 +410,88 @@ public class Validator {
   }
 
   /**
+   * This method validates an input mzTab file.
+   *
+   * @param file the input mzTab file.
+   * @param dataAccessControllerFiles the related peak files.
+   * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
+   */
+  private static Object[] validateMztabFile(File file, List<File> dataAccessControllerFiles) {
+    Object[] result = new Object[2];
+    AssayFileSummary assayFileSummary = new AssayFileSummary();
+    Report report = new Report();
+    try {
+      MzTabControllerImpl mzTabController = new MzTabControllerImpl(file);
+      mzTabController.addMSController(dataAccessControllerFiles);
+      Set<String> uniquePeptides = new HashSet<>();
+      Set<CvParam> ptms = new HashSet<>();
+      final int NUMBER_OF_CHECKS=100;
+      List<Boolean> randomChecks = new ArrayList<>();
+      IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(mzTabController.checkRandomSpectraByDeltaMassThreshold(1, 4.0)));
+      int checkFalseCounts = 0;
+      for (Boolean check : randomChecks) {
+        if (!check) {
+          checkFalseCounts++;
+        }
+      }
+      assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / NUMBER_OF_CHECKS)*100)/100);
+      report.setFileName(file.getAbsolutePath());
+      assayFileSummary.setNumberOfIdentifiedSpectra(mzTabController.getNumberOfIdentifiedSpectra());
+      assayFileSummary.setNumberOfPeptides(mzTabController.getNumberOfPeptides());
+      assayFileSummary.setNumberOfProteins(mzTabController.getNumberOfProteins());
+      assayFileSummary.setNumberofMissingSpectra(mzTabController.getNumberOfMissingSpectra());
+      assayFileSummary.setNumberOfSpectra(mzTabController.getNumberOfSpectra());
+      log.info("Starting to parse over proteins (" + assayFileSummary.getNumberOfProteins() + ") and peptides (" + assayFileSummary.getNumberOfPeptides() + ").");
+      if (mzTabController.getNumberOfMissingSpectra()<1) {
+        mzTabController.getProteinIds().forEach(proteinId ->
+            mzTabController.getProteinById(proteinId).getPeptides().forEach(peptide -> {
+              uniquePeptides.add(peptide.getSequence());
+              peptide.getModifications().forEach(modification ->
+                  modification.getCvParams().forEach(cvParam -> {
+                    if (cvParam.getCvLookupID() == null) {
+                      log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
+                      throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
+                    }
+                    if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
+                      ptms.add(cvParam);
+                    }
+                  }));
+            }));
+        List<Boolean> matches = new ArrayList<>();
+        matches.add(true);
+        IntStream.range(1, (mzTabController.getNumberOfPeptides()<100 ? mzTabController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
+          Peptide peptide = mzTabController.getProteinById(mzTabController.getProteinIds().stream().findAny().get()).getPeptides().stream().findAny().get();
+          if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
+            if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
+              matches.add(false);
+            }
+          }
+        });
+        assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
+        assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
+        assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
+        log.info("Finished parsing over proteins and peptides.");
+      } else {
+        log.error("Missing spectra are present");
+      }
+      scanForGeneralMetadata(mzTabController, assayFileSummary);
+      scanForInstrument(mzTabController, assayFileSummary);
+      scanForSoftware(mzTabController, assayFileSummary);
+      scanForSearchDetails(mzTabController, assayFileSummary);
+      scanMzTabSpecificDetails(mzTabController, dataAccessControllerFiles, assayFileSummary);
+      if (StringUtils.isEmpty(report.getStatus())) {
+        report.setStatus("OK");
+      }
+    } catch (Exception e) {
+      log.error("Exception when scanning mztab file", e);
+      report.setStatus("ERROR\n" + e.getMessage());
+    }
+    result[0]=report;
+    result[1]=assayFileSummary;
+    return result;
+  }
+
+  /**
    * This method extracts an input list of files.
    *
    * @param files a list of input zip files to extract.
@@ -525,7 +662,13 @@ public class Validator {
     Set<Instrument> instruments = new HashSet<>();
     //check to see if we have instrument configurations in the result file to scan
     //this isn't always present
-    if (dataAccessController.getMzGraphMetaData() != null) {
+    MzGraphMetaData mzGraphMetaData = null;
+    try {
+      mzGraphMetaData = dataAccessController.getMzGraphMetaData();
+    } catch (Exception e) {
+      log.error("Exception while getting mzgraph instrument data." + e);
+    }
+    if (mzGraphMetaData != null) {
       Collection<InstrumentConfiguration> instrumentConfigurations = dataAccessController.getMzGraphMetaData().getInstrumentConfigurations();
       for (InstrumentConfiguration instrumentConfiguration : instrumentConfigurations) {
         Instrument instrument = new Instrument();
@@ -543,30 +686,36 @@ public class Validator {
         int orderIndex = 1;
         //source
         for (InstrumentComponent source : instrumentConfiguration.getSource()) {
-          SourceInstrumentComponent sourceInstrumentComponent = new SourceInstrumentComponent();
-          sourceInstrumentComponent.setInstrument(instrument);
-          sourceInstrumentComponent.setOrder(orderIndex++);
-          sourceInstrumentComponent.setInstrumentComponentCvParams(DataConversionUtil.convertInstrumentComponentCvParam(sourceInstrumentComponent, source.getCvParams()));
-          sourceInstrumentComponent.setInstrumentComponentUserParams(DataConversionUtil.convertInstrumentComponentUserParam(sourceInstrumentComponent, source.getUserParams()));
-          instrument.getSources().add(sourceInstrumentComponent);
+          if (source!=null) {
+            SourceInstrumentComponent sourceInstrumentComponent = new SourceInstrumentComponent();
+            sourceInstrumentComponent.setInstrument(instrument);
+            sourceInstrumentComponent.setOrder(orderIndex++);
+            sourceInstrumentComponent.setInstrumentComponentCvParams(DataConversionUtil.convertInstrumentComponentCvParam(sourceInstrumentComponent, source.getCvParams()));
+            sourceInstrumentComponent.setInstrumentComponentUserParams(DataConversionUtil.convertInstrumentComponentUserParam(sourceInstrumentComponent, source.getUserParams()));
+            instrument.getSources().add(sourceInstrumentComponent);
+          }
         }
         //analyzer
-        for (InstrumentComponent analyzer : instrumentConfiguration.getAnalyzer()) {
-          AnalyzerInstrumentComponent analyzerInstrumentComponent = new AnalyzerInstrumentComponent();
-          analyzerInstrumentComponent.setInstrument(instrument);
-          analyzerInstrumentComponent.setOrder(orderIndex++);
-          analyzerInstrumentComponent.setInstrumentComponentCvParams(DataConversionUtil.convertInstrumentComponentCvParam(analyzerInstrumentComponent, analyzer.getCvParams()));
-          analyzerInstrumentComponent.setInstrumentComponentUserParams(DataConversionUtil.convertInstrumentComponentUserParam(analyzerInstrumentComponent, analyzer.getUserParams()));
-          instrument.getAnalyzers().add(analyzerInstrumentComponent);
+        for (InstrumentComponent  analyzer: instrumentConfiguration.getAnalyzer()) {
+          if (analyzer!=null) {
+            AnalyzerInstrumentComponent analyzerInstrumentComponent = new AnalyzerInstrumentComponent();
+            analyzerInstrumentComponent.setInstrument(instrument);
+            analyzerInstrumentComponent.setOrder(orderIndex++);
+            analyzerInstrumentComponent.setInstrumentComponentCvParams(DataConversionUtil.convertInstrumentComponentCvParam(analyzerInstrumentComponent, analyzer.getCvParams()));
+            analyzerInstrumentComponent.setInstrumentComponentUserParams(DataConversionUtil.convertInstrumentComponentUserParam(analyzerInstrumentComponent, analyzer.getUserParams()));
+            instrument.getAnalyzers().add(analyzerInstrumentComponent);
+          }
         }
         //detector
         for (InstrumentComponent detector : instrumentConfiguration.getDetector()) {
-          DetectorInstrumentComponent detectorInstrumentComponent = new DetectorInstrumentComponent();
-          detectorInstrumentComponent.setInstrument(instrument);
-          detectorInstrumentComponent.setOrder(orderIndex++);
-          detectorInstrumentComponent.setInstrumentComponentCvParams(DataConversionUtil.convertInstrumentComponentCvParam(detectorInstrumentComponent, detector.getCvParams()));
-          detectorInstrumentComponent.setInstrumentComponentUserParams(DataConversionUtil.convertInstrumentComponentUserParam(detectorInstrumentComponent, detector.getUserParams()));
-          instrument.getDetectors().add(detectorInstrumentComponent);
+          if (detector!=null) {
+            DetectorInstrumentComponent detectorInstrumentComponent = new DetectorInstrumentComponent();
+            detectorInstrumentComponent.setInstrument(instrument);
+            detectorInstrumentComponent.setOrder(orderIndex++);
+            detectorInstrumentComponent.setInstrumentComponentCvParams(DataConversionUtil.convertInstrumentComponentCvParam(detectorInstrumentComponent, detector.getCvParams()));
+            detectorInstrumentComponent.setInstrumentComponentUserParams(DataConversionUtil.convertInstrumentComponentUserParam(detectorInstrumentComponent, detector.getUserParams()));
+            instrument.getDetectors().add(detectorInstrumentComponent);
+          }
         }
         //store instrument
         instruments.add(instrument);
@@ -648,6 +797,37 @@ public class Validator {
     }
     assayFileSummary.addPeakFileSummaries(peakFileSummaries);
     log.info("Finished scanning for mzid-specific details");
+  }
+
+  /**
+   * This method scans for mzTab-specific metadata.
+   *
+   * @param mzTabController the input controller to read over.
+   * @param peakFiles the input related peak files.
+   * @param assayFileSummary the assay file summary to output results to.
+   * @throws IOException if there are problems reading or writing to the file system.
+   */
+  private static void scanMzTabSpecificDetails(MzTabControllerImpl mzTabController, List<File> peakFiles, AssayFileSummary assayFileSummary) throws IOException {
+    log.info("Started scanning for mzid-specific details");
+    Set<PeakFileSummary> peakFileSummaries = new HashSet<>();
+    List<String> peakFileNames = new ArrayList<>();
+    for (File peakFile : peakFiles) {
+      peakFileNames.add(peakFile.getName());
+      String extension = FilenameUtils.getExtension(peakFile.getAbsolutePath());
+      if (MassSpecFileFormat.MZML.toString().equalsIgnoreCase(extension)) {
+        getMzMLSummary(peakFile, assayFileSummary);
+        break;
+      }
+    }
+    List<SpectraData> spectraDataFiles = mzTabController.getSpectraDataFiles();
+    for (SpectraData spectraDataFile : spectraDataFiles) {
+      String location = spectraDataFile.getLocation();
+      String realFileName = FileUtil.getRealFileName(location);
+      Integer numberOfSpectrabySpectraData = mzTabController.getNumberOfSpectrabySpectraData(spectraDataFile);
+      peakFileSummaries.add(new PeakFileSummary(realFileName, !peakFileNames.contains(realFileName), numberOfSpectrabySpectraData));
+    }
+    assayFileSummary.addPeakFileSummaries(peakFileSummaries);
+    log.info("Finished scanning for mztab-specific details");
   }
 
   /**
