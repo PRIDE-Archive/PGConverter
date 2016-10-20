@@ -13,10 +13,7 @@ import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
-import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzIdentMLControllerImpl;
-import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzMLControllerImpl;
-import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzTabControllerImpl;
-import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.PrideXmlControllerImpl;
+import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.*;
 import uk.ac.ebi.pride.utilities.data.core.*;
 import uk.ac.ebi.pride.utilities.mol.MoleculeUtilities;
 import uk.ac.ebi.pride.utilities.util.StringUtils;
@@ -96,7 +93,7 @@ public class Validator {
     Report report = new Report();
     FileType fileType = getFileType(filesToValidate.get(0));
     if (fileType.equals(FileType.MZID)) {
-      Object[] validation = validateMzidFile(filesToValidate.get(0), peakFiles);
+      Object[] validation = validateAssayFile(filesToValidate.get(0), FileType.MZID, peakFiles);
       report = (Report) validation[0];
       assayFileSummary = (AssayFileSummary) validation[1];
     } else {
@@ -128,7 +125,7 @@ public class Validator {
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
     if (fileType.equals(FileType.PRIDEXML)) {
-      Object[] validation = validatePrideXMLFile(pridexxml);
+      Object[] validation = validateAssayFile(pridexxml, FileType.PRIDEXML, null);
       report = (Report) validation[0];
       assayFileSummary = (AssayFileSummary) validation[1];
     } else {
@@ -142,7 +139,7 @@ public class Validator {
 
 
   /**
-   * This method validated an mzIdentML file.
+   * This method validated an mzTab file.
    *
    * @param cmd the command line arguments.
    * @throws IOException if there are problems reading or writing to the file system.
@@ -155,11 +152,11 @@ public class Validator {
     Report report = new Report();
     FileType fileType = getFileType(filesToValidate.get(0));
     if (fileType.equals(FileType.MZTAB)) {
-      Object[] validation = validateMztabFile(filesToValidate.get(0), peakFiles);
+      Object[] validation = validateAssayFile(filesToValidate.get(0), FileType.MZTAB, peakFiles);
       report = (Report) validation[0];
       assayFileSummary = (AssayFileSummary) validation[1];
     } else {
-      String message = "ERROR: Supplied -mztab file is not a valid mzIdentML file: " + filesToValidate.get(0);
+      String message = "ERROR: Supplied -mztab file is not a valid mzTab file: " + filesToValidate.get(0);
       log.error(message);
       report.setStatus(message);
     }
@@ -214,281 +211,6 @@ public class Validator {
       log.error("Peak file not supplied with mzIdentML file.");
     }
     return peakFiles;
-  }
-
-
-  /**
-   * This method validates an input mzIdentML file.
-   *
-   * @param file the input mzIdentML file.
-   * @param dataAccessControllerFiles the related peak files.
-   * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
-   */
-  private static Object[] validateMzidFile(File file, List<File> dataAccessControllerFiles) {
-    Object[] result = new Object[2];
-    AssayFileSummary assayFileSummary = new AssayFileSummary();
-    Report report = new Report();
-    try {
-      MzIdentMLControllerImpl mzIdentMLController = new MzIdentMLControllerImpl(file, true);
-      mzIdentMLController.addMSController(dataAccessControllerFiles);
-      Set<String> uniquePeptides = new HashSet<>();
-      Set<CvParam> ptms = new HashSet<>();
-      final int NUMBER_OF_CHECKS=100;
-      List<Boolean> randomChecks = new ArrayList<>();
-      IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add( mzIdentMLController.checkRandomSpectraByDeltaMassThreshold(1, 4.0)));
-      int checkFalseCounts = 0;
-      for (Boolean check : randomChecks) {
-        if (!check) {
-          checkFalseCounts++;
-        }
-      }
-      assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / NUMBER_OF_CHECKS)*100)/100);
-      report.setFileName(file.getAbsolutePath());
-      assayFileSummary.setNumberOfIdentifiedSpectra(mzIdentMLController.getNumberOfIdentifiedSpectra());
-      assayFileSummary.setNumberOfPeptides(mzIdentMLController.getNumberOfPeptides());
-      assayFileSummary.setNumberOfProteins(mzIdentMLController.getNumberOfProteins());
-      assayFileSummary.setNumberofMissingSpectra(mzIdentMLController.getNumberOfMissingSpectra());
-      assayFileSummary.setNumberOfSpectra(mzIdentMLController.getNumberOfSpectra());
-      log.info("Starting to parse over proteins (" + assayFileSummary.getNumberOfProteins() + ") and peptides (" + assayFileSummary.getNumberOfPeptides() + ").");
-      if (mzIdentMLController.getNumberOfMissingSpectra()<1) {
-        mzIdentMLController.getProteinIds().forEach(proteinId ->
-          mzIdentMLController.getProteinById(proteinId).getPeptides().forEach(peptide -> {
-            uniquePeptides.add(peptide.getSequence());
-            peptide.getModifications().forEach(modification ->
-              modification.getCvParams().forEach(cvParam -> {
-                if (cvParam.getCvLookupID() == null) {
-                  log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
-                  throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
-                }
-                if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
-                  ptms.add(cvParam);
-                }
-              }));
-          }));
-        List<Boolean> matches = new ArrayList<>();
-        matches.add(true);
-        IntStream.range(1, (mzIdentMLController.getNumberOfPeptides()<100 ? mzIdentMLController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
-          Peptide peptide = mzIdentMLController.getProteinById(mzIdentMLController.getProteinIds().stream().findAny().get()).getPeptides().stream().findAny().get();
-          if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
-            if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
-              matches.add(false);
-            }
-          }
-        });
-        assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
-        assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
-        assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
-        log.info("Finished parsing over proteins and peptides.");
-      } else {
-        log.error("Missing spectra are present");
-      }
-      scanForGeneralMetadata(mzIdentMLController, assayFileSummary);
-      scanForInstrument(mzIdentMLController, assayFileSummary);
-      scanForSoftware(mzIdentMLController, assayFileSummary);
-      scanForSearchDetails(mzIdentMLController, assayFileSummary);
-      scanMzIdentMLSpecificDetails(mzIdentMLController, dataAccessControllerFiles, assayFileSummary);
-      if (StringUtils.isEmpty(report.getStatus())) {
-          report.setStatus("OK");
-      }
-    } catch (Exception e) {
-      log.error("Exception when scanning mzid file", e);
-      report.setStatus("ERROR\n" + e.getMessage());
-    }
-    result[0]=report;
-    result[1]=assayFileSummary;
-    return result;
-  }
-
-  /**
-   * This method validates an input PRIDE XML file.
-   *
-   * @param file the input PRIDE XML file.
-   * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
-   */
-  private static Object[] validatePrideXMLFile(File file) {
-    Object[] result = new Object[2];
-    log.info("Validating PRIDE XML now: " + file.getAbsolutePath());
-    AssayFileSummary assayFileSummary = new AssayFileSummary();
-    Report report = new Report();
-    try {
-      PrideXmlControllerImpl prideXmlController = new PrideXmlControllerImpl(file);
-      Set<String> uniquePeptides = new HashSet<>();
-      Set<CvParam> ptms = new HashSet<>();
-
-      report.setFileName(file.getAbsolutePath());
-      assayFileSummary.setNumberOfIdentifiedSpectra(prideXmlController.getNumberOfIdentifiedSpectra());
-      assayFileSummary.setNumberOfPeptides(prideXmlController.getNumberOfPeptides());
-      assayFileSummary.setNumberOfProteins(prideXmlController.getNumberOfProteins());
-      assayFileSummary.setNumberofMissingSpectra(prideXmlController.getNumberOfMissingSpectra());
-      assayFileSummary.setNumberOfSpectra(prideXmlController.getNumberOfSpectra());
-
-      Double errorPSMCount = 0.0;
-      Set<Comparable> allIdentifiedSpectrumIds = new HashSet<>();
-      Set<Comparable> existingIdentifiedSpectrumIds = new HashSet<>();
-      if (assayFileSummary.getNumberofMissingSpectra()<1) {
-        for (Comparable proteinId :  prideXmlController.getProteinIds()) {
-          for (Peptide peptide :  prideXmlController.getProteinById(proteinId).getPeptides()) {
-            uniquePeptides.add(peptide.getSequence());
-            List<Double> ptmMasses = new ArrayList<>();
-            peptide.getModifications().forEach(modification ->
-              modification.getCvParams().forEach(cvParam -> {
-                if (cvParam.getCvLookupID() == null) {
-                  log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
-                  throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
-                }
-                if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
-                  ptms.add(cvParam);
-                }
-                List<Double> monoMasses = modification.getMonoisotopicMassDelta();
-                if (monoMasses != null && !monoMasses.isEmpty()) {
-                  ptmMasses.add((monoMasses.get(0) == null ? 0.0 : monoMasses.get(0)));
-                }
-              })
-            );
-            Integer charge = prideXmlController.getPeptidePrecursorCharge(proteinId, peptide.getId());
-            double mz = prideXmlController.getPeptidePrecursorMz(proteinId, peptide.getId());
-            Comparable specId = prideXmlController.getPeptideSpectrumId(proteinId, peptide.getId());
-            if ((charge == null || mz == -1) && specId != null) {
-              charge = prideXmlController.getSpectrumPrecursorCharge(specId);
-              mz = prideXmlController.getSpectrumPrecursorMz(specId);
-              if (charge != null && charge == 0) {
-                charge = null;
-              }
-              if (charge == null) {
-                errorPSMCount++;
-              } else {
-                Double deltaMass = MoleculeUtilities.calculateDeltaMz(peptide.getSequence(), mz, charge, ptmMasses);
-                if (deltaMass == null || (deltaMass >= -4.0) || (deltaMass <= 4.0)) {
-                  errorPSMCount++;
-                }
-              }
-            }
-            if (specId != null) {
-              allIdentifiedSpectrumIds.add(specId);
-            }
-            Spectrum spectrum = prideXmlController.getSpectrumById(specId);
-            if (spectrum != null) {
-              existingIdentifiedSpectrumIds.add(spectrum.getId());
-            }
-          }
-        }
-        List<Boolean> matches = new ArrayList<>();
-        matches.add(true);
-        IntStream.range(1, (prideXmlController.getNumberOfPeptides()<100 ? prideXmlController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
-          Peptide peptide = prideXmlController.getProteinById(prideXmlController.getProteinIds().stream().findAny().get()).getPeptides().stream().findAny().get();
-          if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
-            if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
-              matches.add(false);
-            }
-          }
-        });
-        assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
-        assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
-        assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
-        assayFileSummary.setNumberOfSpectra(prideXmlController.getNumberOfSpectra());
-        assayFileSummary.setNumberOfIdentifiedSpectra(existingIdentifiedSpectrumIds.size());
-        allIdentifiedSpectrumIds.removeAll(existingIdentifiedSpectrumIds);
-        assayFileSummary.setNumberofMissingSpectra(allIdentifiedSpectrumIds.size());
-        assayFileSummary.setDeltaMzErrorRate((double) (Math.round(errorPSMCount / (double) assayFileSummary.getNumberOfPeptides())));
-      } else {
-        log.error("Missing spectra are present");
-      }
-      scanForGeneralMetadata(prideXmlController, assayFileSummary);
-      scanForInstrument(prideXmlController, assayFileSummary);
-      scanForSoftware(prideXmlController, assayFileSummary);
-      scanForSearchDetails(prideXmlController, assayFileSummary);
-      if (StringUtils.isEmpty(report.getStatus())) {
-        report.setStatus("OK");
-      }
-    } catch (Exception e) {
-    log.error("Exception when scanning mzid file", e);
-    report.setStatus("ERROR\n" + e.getMessage());
-    }
-    result[0] = report;
-    result[1] = assayFileSummary;
-    return result;
-  }
-
-  /**
-   * This method validates an input mzTab file.
-   *
-   * @param file the input mzTab file.
-   * @param dataAccessControllerFiles the related peak files.
-   * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
-   */
-  private static Object[] validateMztabFile(File file, List<File> dataAccessControllerFiles) {
-    Object[] result = new Object[2];
-    AssayFileSummary assayFileSummary = new AssayFileSummary();
-    Report report = new Report();
-    try {
-      MzTabControllerImpl mzTabController = new MzTabControllerImpl(file);
-      mzTabController.addMSController(dataAccessControllerFiles);
-      Set<String> uniquePeptides = new HashSet<>();
-      Set<CvParam> ptms = new HashSet<>();
-      final int NUMBER_OF_CHECKS=100;
-      List<Boolean> randomChecks = new ArrayList<>();
-      IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(mzTabController.checkRandomSpectraByDeltaMassThreshold(1, 4.0)));
-      int checkFalseCounts = 0;
-      for (Boolean check : randomChecks) {
-        if (!check) {
-          checkFalseCounts++;
-        }
-      }
-      assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / NUMBER_OF_CHECKS)*100)/100);
-      report.setFileName(file.getAbsolutePath());
-      assayFileSummary.setNumberOfIdentifiedSpectra(mzTabController.getNumberOfIdentifiedSpectra());
-      assayFileSummary.setNumberOfPeptides(mzTabController.getNumberOfPeptides());
-      assayFileSummary.setNumberOfProteins(mzTabController.getNumberOfProteins());
-      assayFileSummary.setNumberofMissingSpectra(mzTabController.getNumberOfMissingSpectra());
-      assayFileSummary.setNumberOfSpectra(mzTabController.getNumberOfSpectra());
-      log.info("Starting to parse over proteins (" + assayFileSummary.getNumberOfProteins() + ") and peptides (" + assayFileSummary.getNumberOfPeptides() + ").");
-      if (mzTabController.getNumberOfMissingSpectra()<1) {
-        mzTabController.getProteinIds().forEach(proteinId ->
-            mzTabController.getProteinById(proteinId).getPeptides().forEach(peptide -> {
-              uniquePeptides.add(peptide.getSequence());
-              peptide.getModifications().forEach(modification ->
-                  modification.getCvParams().forEach(cvParam -> {
-                    if (cvParam.getCvLookupID() == null) {
-                      log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
-                      throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
-                    }
-                    if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
-                      ptms.add(cvParam);
-                    }
-                  }));
-            }));
-        List<Boolean> matches = new ArrayList<>();
-        matches.add(true);
-        IntStream.range(1, (mzTabController.getNumberOfPeptides()<100 ? mzTabController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
-          Peptide peptide = mzTabController.getProteinById(mzTabController.getProteinIds().stream().findAny().get()).getPeptides().stream().findAny().get();
-          if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
-            if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
-              matches.add(false);
-            }
-          }
-        });
-        assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
-        assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
-        assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
-        log.info("Finished parsing over proteins and peptides.");
-      } else {
-        log.error("Missing spectra are present");
-      }
-      scanForGeneralMetadata(mzTabController, assayFileSummary);
-      scanForInstrument(mzTabController, assayFileSummary);
-      scanForSoftware(mzTabController, assayFileSummary);
-      scanForSearchDetails(mzTabController, assayFileSummary);
-      scanMzTabSpecificDetails(mzTabController, dataAccessControllerFiles, assayFileSummary);
-      if (StringUtils.isEmpty(report.getStatus())) {
-        report.setStatus("OK");
-      }
-    } catch (Exception e) {
-      log.error("Exception when scanning mztab file", e);
-      report.setStatus("ERROR\n" + e.getMessage());
-    }
-    result[0]=report;
-    result[1]=assayFileSummary;
-    return result;
   }
 
   /**
@@ -769,14 +491,14 @@ public class Validator {
   }
 
   /**
-   * This method scans for mzIdentML-specific metadata.
+   * This method scans for ReferencedIdentificationController-specific metadata.
    *
-   * @param mzIdentMLController the input controller to read over.
+   * @param referencedIdentificationController the input controller to read over.
    * @param peakFiles the input related peak files.
    * @param assayFileSummary the assay file summary to output results to.
    * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static void scanMzIdentMLSpecificDetails(MzIdentMLControllerImpl mzIdentMLController, List<File> peakFiles, AssayFileSummary assayFileSummary) throws IOException {
+  private static void scanRefIdControllerpecificDetails(ReferencedIdentificationController referencedIdentificationController, List<File> peakFiles, AssayFileSummary assayFileSummary) throws IOException {
     log.info("Started scanning for mzid-specific details");
     Set<PeakFileSummary> peakFileSummaries = new HashSet<>();
     List<String> peakFileNames = new ArrayList<>();
@@ -788,47 +510,17 @@ public class Validator {
         break;
       }
     }
-    List<SpectraData> spectraDataFiles = mzIdentMLController.getSpectraDataFiles();
+    List<SpectraData> spectraDataFiles = referencedIdentificationController.getSpectraDataFiles();
     for (SpectraData spectraDataFile : spectraDataFiles) {
       String location = spectraDataFile.getLocation();
       String realFileName = FileUtil.getRealFileName(location);
-      Integer numberOfSpectrabySpectraData = mzIdentMLController.getNumberOfSpectrabySpectraData(spectraDataFile);
+      Integer numberOfSpectrabySpectraData = referencedIdentificationController.getNumberOfSpectrabySpectraData(spectraDataFile);
       peakFileSummaries.add(new PeakFileSummary(realFileName, !peakFileNames.contains(realFileName), numberOfSpectrabySpectraData));
     }
     assayFileSummary.addPeakFileSummaries(peakFileSummaries);
-    log.info("Finished scanning for mzid-specific details");
+    log.info("Finished scanning for rReferencedIdentificationController-specific details");
   }
 
-  /**
-   * This method scans for mzTab-specific metadata.
-   *
-   * @param mzTabController the input controller to read over.
-   * @param peakFiles the input related peak files.
-   * @param assayFileSummary the assay file summary to output results to.
-   * @throws IOException if there are problems reading or writing to the file system.
-   */
-  private static void scanMzTabSpecificDetails(MzTabControllerImpl mzTabController, List<File> peakFiles, AssayFileSummary assayFileSummary) throws IOException {
-    log.info("Started scanning for mzid-specific details");
-    Set<PeakFileSummary> peakFileSummaries = new HashSet<>();
-    List<String> peakFileNames = new ArrayList<>();
-    for (File peakFile : peakFiles) {
-      peakFileNames.add(peakFile.getName());
-      String extension = FilenameUtils.getExtension(peakFile.getAbsolutePath());
-      if (MassSpecFileFormat.MZML.toString().equalsIgnoreCase(extension)) {
-        getMzMLSummary(peakFile, assayFileSummary);
-        break;
-      }
-    }
-    List<SpectraData> spectraDataFiles = mzTabController.getSpectraDataFiles();
-    for (SpectraData spectraDataFile : spectraDataFiles) {
-      String location = spectraDataFile.getLocation();
-      String realFileName = FileUtil.getRealFileName(location);
-      Integer numberOfSpectrabySpectraData = mzTabController.getNumberOfSpectrabySpectraData(spectraDataFile);
-      peakFileSummaries.add(new PeakFileSummary(realFileName, !peakFileNames.contains(realFileName), numberOfSpectrabySpectraData));
-    }
-    assayFileSummary.addPeakFileSummaries(peakFileSummaries);
-    log.info("Finished scanning for mztab-specific details");
-  }
 
   /**
    * This method checks if a mapped mzML file has chromatograms or not.
@@ -853,6 +545,111 @@ public class Validator {
         mzMLController.close();
       }
     }
+    return result;
+  }
+
+  /**
+   * This method validates an input assay file.
+   *
+   * @param file the input assay file.
+   * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
+   */
+  private static Object[] validateAssayFile(File file, FileType type, List<File> dataAccessControllerFiles) {
+    Object[] result = new Object[2];
+    log.info("Validating assay file: " + file.getAbsolutePath());
+    AssayFileSummary assayFileSummary = new AssayFileSummary();
+    Report report = new Report();
+    try {
+      final AssayFileController assayFileController;
+      switch(type) {
+        case MZID :
+          assayFileController = new MzIdentMLControllerImpl(file);
+          assayFileController.addMSController(dataAccessControllerFiles);
+          break;
+        case PRIDEXML :
+          assayFileController = new PrideXmlControllerImpl(file);
+          break;
+        case MZTAB : assayFileController = new MzTabControllerImpl(file);
+          assayFileController.addMSController(dataAccessControllerFiles);
+          break;
+        default : log.error("Unrecognized assay fle type: " + type);
+          assayFileController = new MzIdentMLControllerImpl(file);
+          break;
+      }
+      Set<String> uniquePeptides = new HashSet<>();
+      Set<CvParam> ptms = new HashSet<>();
+      final int NUMBER_OF_CHECKS=1;
+      List<Boolean> randomChecks = new ArrayList<>();
+      IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(1, 4.0)));
+      int checkFalseCounts = 0;
+      for (Boolean check : randomChecks) {
+        if (!check) {
+          checkFalseCounts++;
+        }
+      }
+      assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / NUMBER_OF_CHECKS)*100)/100);
+      report.setFileName(file.getAbsolutePath());
+      assayFileSummary.setNumberOfIdentifiedSpectra(assayFileController.getNumberOfIdentifiedSpectra());
+      assayFileSummary.setNumberOfPeptides(assayFileController.getNumberOfPeptides());
+      assayFileSummary.setNumberOfProteins(assayFileController.getNumberOfProteins());
+      assayFileSummary.setNumberofMissingSpectra(assayFileController.getNumberOfMissingSpectra());
+      assayFileSummary.setNumberOfSpectra(assayFileController.getNumberOfSpectra());
+      if (assayFileSummary.getNumberofMissingSpectra()<1) {
+        for (Comparable proteinId :  assayFileController.getProteinIds()) {
+          for (Peptide peptide :  assayFileController.getProteinById(proteinId).getPeptides()) {
+            uniquePeptides.add(peptide.getSequence());
+            peptide.getModifications().forEach(modification ->
+                modification.getCvParams().forEach(cvParam -> {
+                  if (cvParam.getCvLookupID() == null) {
+                    log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
+                    throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
+                  }
+                  if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
+                    ptms.add(cvParam);
+                  }
+                })
+            );
+          }
+        }
+        List<Boolean> matches = new ArrayList<>();
+        matches.add(true);
+        IntStream.range(1, (assayFileController.getNumberOfPeptides()<100 ? assayFileController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
+          Peptide peptide = assayFileController.getProteinById(assayFileController.getProteinIds().stream().findAny().get()).getPeptides().stream().findAny().get();
+          if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
+            if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
+              matches.add(false);
+            }
+          }
+        });
+        assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
+        assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
+        assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
+      } else {
+        log.error("Missing spectra are present");
+      }
+      scanForGeneralMetadata(assayFileController, assayFileSummary);
+      scanForInstrument(assayFileController, assayFileSummary);
+      scanForSoftware(assayFileController, assayFileSummary);
+      scanForSearchDetails(assayFileController, assayFileSummary);
+      switch(type) {
+        case MZID :
+          scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
+          break;
+        case MZTAB :
+          scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
+          break;
+        default : // do nothing
+          break;
+      }
+      if (StringUtils.isEmpty(report.getStatus())) {
+        report.setStatus("OK");
+      }
+    } catch (Exception e) {
+      log.error("Exception when scanning assay file", e);
+      report.setStatus("ERROR\n" + e.getMessage());
+    }
+    result[0] = report;
+    result[1] = assayFileSummary;
     return result;
   }
 }

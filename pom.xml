@@ -17,7 +17,7 @@
     <properties>
         <assembly.dir>${project.name}-${project.version}</assembly.dir>
         <archive.repo.version>0.1.19</archive.repo.version>
-        <ms.data.core.api.version>2.0.8-JAVA8</ms.data.core.api.version>
+        <ms.data.core.api.version>2.0.10-JAVA8</ms.data.core.api.version>
         <slf4j.version>1.7.12</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <pride-utilities.version>2.0.14</pride-utilities.version>
