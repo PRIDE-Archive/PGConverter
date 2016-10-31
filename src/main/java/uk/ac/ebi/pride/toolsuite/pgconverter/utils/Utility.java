@@ -64,7 +64,7 @@ public class Utility {
 
   /**
    * Handles exiting from the tool, and potentially messages REDIS if set.
-   * @param cmd
+   * @param cmd command line arguments.
    */
   public static void exit(CommandLine cmd) {
     if (cmd.hasOption(ARG_REDIS)) {
