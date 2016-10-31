@@ -22,10 +22,10 @@ Primarily this tool is powered by the [ms-data-core-api](https://github.com/PRID
 
 ## Usage
 ### File conversion
-To convert, run the tool with the -c parameter, and the provide 'result' assay files using the -mzid, -mztab, or -pridexml parameter, and related 'peak' files if applicable. Peak files can be added with the -peak parameter for a single peak file, or -peaks with paths separated by '##' for multiple related peak files. You may specify an output file directly using the -outputfile parameter, or a general output format: this will the same name as the input file name with the extension of the -outputformat.
+To convert, run the tool with the -c parameter, and the provide 'result' assay files using the -mzid, -mztab, or -pridexml parameter. You may specify an output file directly using the -outputfile parameter, or a general output format: this will the same name as the input file name with the extension of the -outputformat.
 
 #### Convert from mzIdentML to mzTab, specifying an output file name
-$ java -jar pg-converter.jar -c -mzid /path/to/data/foo.mzid -peaks /path/to/data/bar1.mgf##/path/to/data/bar2.mgf -outputfile /path/to/output/output.mztab
+$ java -jar pg-converter.jar -c -mzid /path/to/data/foo.mzid -outputfile /path/to/output/output.mztab
 #### Convert from PRIDE XML to mzTab, specifying an output format
 $ java -jar pg-converter.jar -c -pridexml /path/to/data/foo.pride.xml -outputformat mztab
 #### Convert from annotated mzTab to sorted, filtered) proBed
