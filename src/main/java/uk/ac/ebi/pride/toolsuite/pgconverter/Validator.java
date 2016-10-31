@@ -15,7 +15,7 @@ import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.*;
 import uk.ac.ebi.pride.utilities.data.core.*;
-import uk.ac.ebi.pride.utilities.mol.MoleculeUtilities;
+import uk.ac.ebi.pride.utilities.data.core.Software;
 import uk.ac.ebi.pride.utilities.util.StringUtils;
 
 import java.io.*;
@@ -64,7 +64,7 @@ public class Validator {
    * @throws IOException if there are problems reading or writing to the file system.
    */
   private static FileType getFileType(File file) throws IOException {
-    FileType result = null;
+    FileType result;
     log.info("Checking file type for : " + file);
     if (PrideXmlControllerImpl.isValidFormat(file)) {
       result = FileType.PRIDEXML;
@@ -191,9 +191,9 @@ public class Validator {
    */
   private static List<File> getPeakFiles(CommandLine cmd) throws IOException {
     List<File> peakFiles = new ArrayList<>();
-    if (cmd.hasOption("peak") || cmd.hasOption("peaks")) {
-      String[] peakFilesString = cmd.hasOption("peak") ? cmd.getOptionValues("peak")
-          : cmd.hasOption("peaks") ?  cmd.getOptionValue("peaks").split("##") : new String[0];
+    if (cmd.hasOption(ARG_PEAK) || cmd.hasOption(ARG_PEAKS)) {
+      String[] peakFilesString = cmd.hasOption(ARG_PEAK) ? cmd.getOptionValues(ARG_PEAK)
+          : cmd.hasOption(ARG_PEAKS) ?  cmd.getOptionValue(ARG_PEAKS).split("##") : new String[0];
       for (String aPeakFilesString : peakFilesString) {
         File peakFile = new File(aPeakFilesString);
         if (peakFile.isDirectory()) {
@@ -235,8 +235,7 @@ public class Validator {
    * @return a list of files that are gzipped.
    */
   private static List<File> findZippedFiles(List<File> files) {
-    List<File> zippedFiles = files.stream().filter(file -> file.getName().endsWith(".gz")).collect(Collectors.toList());
-    return zippedFiles;
+    return files.stream().filter(file -> file.getName().endsWith(".gz")).collect(Collectors.toList());
   }
 
   /**
@@ -458,7 +457,7 @@ public class Validator {
     ExperimentMetaData experimentMetaData = dataAccessController.getExperimentMetaData();
     Set<Software> softwares = new HashSet<>();
     softwares.addAll(experimentMetaData.getSoftwares());
-    Set softwareSet = new HashSet<>();
+    Set<uk.ac.ebi.pride.archive.repo.assay.software.Software> softwareSet = new HashSet<>();
     softwareSet.addAll(DataConversionUtil.convertSoftware(softwares));
     assayFileSummary.addSoftwares(softwareSet);
     log.info("Finished scanning for software");
