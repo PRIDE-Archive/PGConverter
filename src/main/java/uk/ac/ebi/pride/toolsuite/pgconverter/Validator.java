@@ -517,7 +517,7 @@ public class Validator {
       peakFileSummaries.add(new PeakFileSummary(realFileName, !peakFileNames.contains(realFileName), numberOfSpectrabySpectraData));
     }
     assayFileSummary.addPeakFileSummaries(peakFileSummaries);
-    log.info("Finished scanning for rReferencedIdentificationController-specific details");
+    log.info("Finished scanning for ReferencedIdentificationController-specific details");
   }
 
 
