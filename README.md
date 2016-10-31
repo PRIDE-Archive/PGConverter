@@ -12,7 +12,7 @@ A secondary function of this library is to gather metadata and statistics about 
 Primarily this tool is powered by the [ms-data-core-api](https://github.com/PRIDE-Utilities/ms-data-core-api) library to read/write files.
 
 ## Minimum requirements
-* Java 1.8
+* Java 1.8, 64-bit
 * A dual-core CPU
 * 2+ GB RAM for complex mzIdentML files.
 
