@@ -44,7 +44,10 @@ $ java -jar pg-converter.jar r -v -mztab /path/to/data/foo.mzid -peaks /path/to/
 $ java -jar pg-converter.jar  -v -pridexml /path/to/data/foo.pride.xml -skipserialization -reportfile /path/to/output/outputReport.txt
 
 ## Troubleshooting
+### Java memory usage
 You may need to allocate more RAM for the tool to use. To do so, add an extra parameter at the start of the command along the lines of: -Xmx\<heap size\>g
+
+You will also need to ensure that you're using 64-bit Java in order to use a higher allocation of RAM.
 
 * e.g. to specify 4GB of RAM:
 
@@ -54,9 +57,10 @@ $ java -Xmx4g -jar pg-converter.jar -c -mzid /path/to/data/foo.mzid -peaks /path
 
 $ java -Xmx100g -jar pg-converter.jar  -v -mzid /path/to/data/foo.mzid -peak /path/to/data/bar1.mgf -skipserialization -reportfile /path/to/output/outputReport.txt
 
+### bigBed conversion
+bigBed conversion requires extra supporting files. For further information please see the [PSI proBed](http://www.psidev.info/probed) website, and the [UCSC bigBed](https://genome.ucsc.edu/goldenpath/help/bigBed.html) website.
+
+In particular, the UCSC bedToBigBed converter tool is only available for linux and Mac (OSX), not Windows.
+
 ## Contact
 To get in touch, please either email <pride-support@ebi.ac.uk> or raise an issue onn the [issues page](https://github.com/PRIDE-Toolsuite/PGConverter/issues).
-
-
-
-
