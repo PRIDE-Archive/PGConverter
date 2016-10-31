@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.toolsuite.pgconverter;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,11 +134,14 @@ public class Converter {
     if (cmd.hasOption(ARG_CHROMSIZES)) {
       log.info("Sorting and filtering proBed file according to chrom sizes file: " + cmd.getOptionValue(ARG_CHROMSIZES));
       try {
+        FileUtils.copyFile(outputFile, new File(outputFile.getPath() + "_unsorted"));
         MzTabBedConverter.sortProBed(outputFile, new File(cmd.getOptionValue(ARG_CHROMSIZES)));
       } catch (InterruptedException ie) {
         log.error("Interrupted Exception: ", ie);
         throw new IOException(ie);
       }
+    } else {
+      log.info("Chromosome sizes file was not provided, therefore not sorting BED file.");
     }
   }
 
@@ -166,6 +170,9 @@ public class Converter {
     }
     if (aSQL!=null && chromSizes!=null && bigBedConverter!=null) {
       convertProbedToBigbed(inputFile, aSQL, chromSizes, bigBedConverter);
+    } else {
+      log.error("All supporting files have not been set correctly. Please double check the following have been provided properly:\n" +
+          "aSQL file, chromosome sizes file, bigBedConverter tool.");
     }
   }
 
@@ -248,22 +255,22 @@ public class Converter {
 
   /**
    * This method converts a proBed file to bigBed using the UCSC converter tool.
-   * @param probed the input proBed file to be converted (.pro.bed).
+   * @param proBed the input proBed file to be converted (.pro.bed).
    * @param aSQL the supporting aSQL file (.as).
    * @param chromSizes the supporting chromosome sizes text file.
    * @param bigBedConverter the UCSC bedToBigBed tool.
    * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static void convertProbedToBigbed(File probed, File aSQL, File chromSizes, File bigBedConverter) throws IOException {
+  private static void convertProbedToBigbed(File proBed, File aSQL, File chromSizes, File bigBedConverter) throws IOException {
     try {
       File outputBigBed = MzTabBedConverter.convertProBedToBigBed(
                           aSQL,
-                         "bed12+13",
-                         probed,
+                          "bed12+13",
+                          proBed,
                           chromSizes,
                           bigBedConverter
       );
-      log.info("Generated output bigBed file:" + outputBigBed);
+      log.info("Generated output bigBed file:" + outputBigBed.toPath());
       } catch (IOException|URISyntaxException|InterruptedException e) {
       log.error("Error when converting to bigBed: ", e);
     }
