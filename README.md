@@ -14,7 +14,7 @@ Primarily this tool is powered by the [ms-data-core-api](https://github.com/PRID
 ## Minimum requirements
 Java 1.8
 dual-core CPU
->2 GB RAM for complex mzIdentML files.
+2+ GB RAM for complex mzIdentML files.
 
 ## Instructions
 1. Download the zip archive file.
