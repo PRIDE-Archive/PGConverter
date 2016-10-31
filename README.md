@@ -28,9 +28,9 @@ To convert, run the tool with the -c parameter, and the provide 'result' assay f
 $ java -jar pg-converter.jar -c -mzid /path/to/data/foo.mzid -peaks /path/to/data/bar1.mgf##/path/to/data/bar2.mgf -outputfile /path/to/output/output.mztab
 #### Convert from PRIDE XML to mzTab, specifying an output format
 $ java -jar pg-converter.jar -c -pridexml /path/to/data/foo.pride.xml -outputformat mztab
-#### Convert from annotated mzTab to proBed
-$ java -jar pg-converter.jar -c -mztab /path/to/data/foo.mztab -peaks /path/to/data/bar1.mgf##/path/to/data/bar2.mgf -chromsizes /path/to/chrom.txt
-#### Convert from proBed to bigBed
+#### Convert from annotated mzTab to sorted, filtered) proBed
+$ java -jar pg-converter.jar -c -mztab /path/to/data/foo.mztab -chromsizes /path/to/chrom.txt -outputformat probed
+#### Convert from a sorted, filtered proBed to bigBed
 $ java -jar pg-converter.jar -c -mztab /path/to/data/foo.pro.bed -chromsizes /path/to/chrom.txt -asqlfile /path/to/aSQL.as -bigbedconverter /path/to/bedToBigBed
 
 ## File validation
