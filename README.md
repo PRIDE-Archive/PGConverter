@@ -12,9 +12,9 @@ A secondary function of this library is to gather metadata and statistics about 
 Primarily this tool is powered by the [ms-data-core-api](https://github.com/PRIDE-Utilities/ms-data-core-api) library to read/write files.
 
 ## Minimum requirements
-Java 1.8
-dual-core CPU
-2+ GB RAM for complex mzIdentML files.
+* Java 1.8
+* A dual-core CPU
+* 2+ GB RAM for complex mzIdentML files.
 
 ## Instructions
 1. Download the zip archive file.
@@ -47,11 +47,13 @@ $ java -jar pg-converter.jar  -v -pridexml /path/to/data/foo.pride.xml -skipseri
 ## Troubleshooting
 You may need to allocate more RAM for the tool to use. To do so, add an extra parameter at the start of the command along the lines of: -Xmx\<heap size\>g
 
-e.g. to specify 4GB of RAM:
+* e.g. to specify 4GB of RAM:
 
 $ java -Xmx4g -jar pg-converter.jar -c -mzid /path/to/data/foo.mzid -peaks /path/to/data/bar1.mgf##/path/to/data/bar2.mgf -outputfile /path/to/output/output.mztab
 
-$ java -Xmx4g -jar pg-converter.jar  -v -mzid /path/to/data/foo.mzid -peak /path/to/data/bar1.mgf -skipserialization -reportfile /path/to/output/outputReport.txt
+* e.g. to specify 100GB of RAM:
+
+$ java -Xmx100g -jar pg-converter.jar  -v -mzid /path/to/data/foo.mzid -peak /path/to/data/bar1.mgf -skipserialization -reportfile /path/to/output/outputReport.txt
 
 ## Contact
 To get in touch, please either email <pride-support@ebi.ac.uk> or raise an issue onn the [issues page](https://github.com/PRIDE-Toolsuite/PGConverter/issues).
