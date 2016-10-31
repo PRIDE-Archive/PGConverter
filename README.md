@@ -28,10 +28,14 @@ To convert, run the tool with the -c parameter, and the provide 'result' assay f
 $ java -jar pg-converter.jar -c -mzid /path/to/data/foo.mzid -outputfile /path/to/output/output.mztab
 #### Convert from PRIDE XML to mzTab, specifying an output format
 $ java -jar pg-converter.jar -c -pridexml /path/to/data/foo.pride.xml -outputformat mztab
-#### Convert from annotated mzTab to sorted, filtered) proBed
+#### Convert from annotated mzTab to (sorted, filtered*) proBed
 $ java -jar pg-converter.jar -c -mztab /path/to/data/foo.mztab -chromsizes /path/to/chrom.txt -outputformat probed
-#### Convert from a sorted, filtered proBed to bigBed
+#### Convert from annotated mzIdentML to (sorted, filtered*) proBed
+$ java -jar pg-converter.jar -c -mzid /path/to/data/foo.mztab -chromsizes /path/to/chrom.txt -outputformat probed
+#### Convert from (sorted, filtered*) proBed to bigBed
 $ java -jar pg-converter.jar -c -mztab /path/to/data/foo.pro.bed -chromsizes /path/to/chrom.txt -asqlfile /path/to/aSQL.as -bigbedconverter /path/to/bedToBigBed
+
+NB *bigBed conversion requires the input proBed file to be sorted by the first 3 columns, and chromosomes without provided sizes need to be filtered out.
 
 ## File validation
 To validate, run the tool with the -v parameter, and the provide your 'result' assay files, and related 'peak' files if applicable. Peak files can be added with the -peak parameter for a single peak file, or -peaks with paths separated by '##' for multiple related peak files.
