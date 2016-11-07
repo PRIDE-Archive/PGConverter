@@ -13,6 +13,7 @@ import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
+import uk.ac.ebi.pride.utilities.data.controller.cache.CacheEntry;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.*;
 import uk.ac.ebi.pride.utilities.data.core.*;
 import uk.ac.ebi.pride.utilities.data.core.Software;
@@ -594,8 +595,22 @@ public class Validator {
       assayFileSummary.setNumberofMissingSpectra(assayFileController.getNumberOfMissingSpectra());
       assayFileSummary.setNumberOfSpectra(assayFileController.getNumberOfSpectra());
       if (assayFileSummary.getNumberofMissingSpectra()<1) {
-        for (Comparable proteinId :  assayFileController.getProteinIds()) {
-          for (Peptide peptide :  assayFileController.getProteinById(proteinId).getPeptides()) {
+        double pepCount =0;
+        int protCount = 0;
+        final int PEP_STEP_SIZE= 100000;
+        for (Comparable proteinId : assayFileController.getProteinIds()) {
+          protCount++;
+          if (log.isDebugEnabled()) {
+            log.debug("\nPercent through total proteins, " + protCount + " / " +   assayFileController.getProteinIds().size() + " : " + ((int)((protCount * 100.0f) /  assayFileController.getProteinIds().size())) );
+            calcCacheSizses(assayFileController);
+          }
+          for (Peptide peptide : assayFileController.getProteinById(proteinId).getPeptides()) {
+            pepCount++;
+            if (log.isDebugEnabled()) {
+              if (((int)pepCount) % PEP_STEP_SIZE == 0) {
+                log.info("Processed another " + PEP_STEP_SIZE + " peptides. Now at: " + pepCount);
+              }
+            }
             uniquePeptides.add(peptide.getSequence());
             peptide.getModifications().forEach(modification ->
                 modification.getCvParams().forEach(cvParam -> {
@@ -650,5 +665,24 @@ public class Validator {
     result[0] = report;
     result[1] = assayFileSummary;
     return result;
+  }
+
+  /**
+   * This method outputs the cache sizes for debugging purposes.
+   *
+   * @param cachedDataAccessController the data access controller for the assay file
+   */
+  private static void calcCacheSizses(CachedDataAccessController cachedDataAccessController) {
+    Arrays.stream(CacheEntry.values()).forEach(cacheEntry -> {
+      if (cachedDataAccessController.getCache().get(cacheEntry) != null) {
+        try {
+          log.debug("Cache entry: " + cacheEntry.name() + " Size: " + ((Map) cachedDataAccessController.getCache().get(cacheEntry)).size());
+        } catch (Exception e) {
+          log.debug("Cache entry: " + cacheEntry.name() + " Size: " + ((Collection) cachedDataAccessController.getCache().get(cacheEntry)).size());
+        }
+      } else {
+        log.debug("Cache entry: " + cacheEntry.name() + " Size: null");
+      }
+    });
   }
 }
