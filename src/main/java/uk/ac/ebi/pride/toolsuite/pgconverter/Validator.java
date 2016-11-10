@@ -673,16 +673,13 @@ public class Validator {
    * @param cachedDataAccessController the data access controller for the assay file
    */
   private static void calcCacheSizses(CachedDataAccessController cachedDataAccessController) {
-    Arrays.stream(CacheEntry.values()).forEach(cacheEntry -> {
-      if (cachedDataAccessController.getCache().get(cacheEntry) != null) {
-        try {
-          log.debug("Cache entry: " + cacheEntry.name() + " Size: " + ((Map) cachedDataAccessController.getCache().get(cacheEntry)).size());
-        } catch (Exception e) {
-          log.debug("Cache entry: " + cacheEntry.name() + " Size: " + ((Collection) cachedDataAccessController.getCache().get(cacheEntry)).size());
-        }
-      } else {
-        log.debug("Cache entry: " + cacheEntry.name() + " Size: null");
-      }
-    });
+    Arrays.stream(CacheEntry.values()).forEach(cacheEntry -> log.debug("Cache entry: " + cacheEntry.name() + " Size: " + (
+        (cachedDataAccessController.getCache().get(cacheEntry)==null?
+            "null" :
+            cachedDataAccessController.getCache().get(cacheEntry) instanceof Map ?
+                ((Map)cachedDataAccessController.getCache().get(cacheEntry)).size() :
+                cachedDataAccessController.getCache().get(cacheEntry) instanceof Collection ?
+                    ((Collection)cachedDataAccessController.getCache().get(cacheEntry)).size() :
+                    "null"))));
   }
 }
