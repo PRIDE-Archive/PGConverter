@@ -48,7 +48,7 @@ public class ValidatorTest {
   }
 
   /**
-   * This test performs xml schema validation on one example mzIdentML file which is related to a single peak .mgf file.
+   * This test performs xml schema and semantic validation on one example mzIdentML file which is related to a single peak .mgf file.
    *
    * @throws Exception if there are problems opening the example file.
    */
@@ -67,7 +67,7 @@ public class ValidatorTest {
     File reportFile = File.createTempFile("testMzid", ".log");
     String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_SCHEMA_VALIDATION, "-" + ARG_MZID, inputMzidFile.getPath(), "-" + ARG_PEAK, inputMgfFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
     Validator.startValidation(MainApp.parseArgs(args));
-    checkXmlSchemaOkMessage(reportFile);
+    assertTrue("No errors reported during the validation of the mzIdentML file", reportStatus(reportFile));
   }
 
   /**
@@ -89,7 +89,7 @@ public class ValidatorTest {
   }
 
   /**
-   * This test performs xml schema validation on one example PRIDE XML file.
+   * This test performs xml schema and semantic validation on one example PRIDE XML file.
    *
    * @throws Exception if there are problems opening the example file.
    */
@@ -103,20 +103,7 @@ public class ValidatorTest {
     File reportFile = File.createTempFile("testPridexml", ".log");
     String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_SCHEMA_VALIDATION, "-" + ARG_PRIDEXML, inputPridexmlFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
     Validator.startValidation(MainApp.parseArgs(args));
-    checkXmlSchemaOkMessage(reportFile);
-  }
-
-  /**
-   * This method checks if the XML schema validation has an OK message in the output report file.
-   *
-   * @param outputFile the output report file after XML schema validation.
-   */
-  private void checkXmlSchemaOkMessage(File outputFile) {
-    try (Stream<String> stream = Files.lines(outputFile.toPath())) {
-      assertTrue("No errors reported during the xml schema validation of the mzIdentML file", stream.findFirst().get().contains(SCHEMA_OK_MESSAGE));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    assertTrue("No errors reported during the validation of the PRIDE XML", reportStatus(reportFile));
   }
 
   /**

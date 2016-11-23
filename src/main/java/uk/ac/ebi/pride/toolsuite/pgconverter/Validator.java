@@ -103,19 +103,29 @@ public class Validator {
     FileType fileType = getFileType(filesToValidate.get(0));
     File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
     if (fileType.equals(FileType.MZID)) {
+      boolean valid = true; // assume true if not validating schema
       if (cmd.hasOption(ARG_SCHEMA_VALIDATION)) {
-        validateSchema(MZID_SCHEMA, filesToValidate.get(0), outputFile);
-      } else {
+        if (outputFile != null) {
+          validateSchema(MZID_SCHEMA, filesToValidate.get(0), outputFile);
+        } else {
+          valid = validateSchema(MZID_SCHEMA, filesToValidate.get(0));
+        }
+      }
+      if (valid) {
         Object[] validation = validateAssayFile(filesToValidate.get(0), FileType.MZID, peakFiles);
         report = (Report) validation[0];
         assayFileSummary = (AssayFileSummary) validation[1];
-        outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
+      } else {
+        String message = "ERROR: Supplied -mzid file failed XML schema validation: " + filesToValidate.get(0);
+        log.error(message);
+        report.setStatus(message);
       }
     } else {
       String message = "ERROR: Supplied -mzid file is not a valid mzIdentML file: " + filesToValidate.get(0);
       log.error(message);
       report.setStatus(message);
     }
+    outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
   }
 
   /**
@@ -137,21 +147,31 @@ public class Validator {
     FileType fileType = getFileType(pridexxml);
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
+    File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
     if (fileType.equals(FileType.PRIDEXML)) {
-      File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
+      boolean valid = true; // assume true if not validating schema
       if (cmd.hasOption(ARG_SCHEMA_VALIDATION)) {
-        validateSchema(PRIDE_XML_SCHEMA, pridexxml, outputFile);
-      } else {
+        if (outputFile != null) {
+          validateSchema(PRIDE_XML_SCHEMA, pridexxml, outputFile);
+        } else {
+          validateSchema(PRIDE_XML_SCHEMA, pridexxml);
+        }
+      }
+      if (valid) {
         Object[] validation = validateAssayFile(pridexxml, FileType.PRIDEXML, null);
         report = (Report) validation[0];
         assayFileSummary = (AssayFileSummary) validation[1];
-        outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
+      } else {
+        String message = "ERROR: Supplied -pridexml file failed XML schema validation: " + filesToValidate.get(0);
+        log.error(message);
+        report.setStatus(message);
       }
     } else {
       String message = "Supplied -pridexml file is not a valid PRIDE XML file: " + pridexxml.getAbsolutePath();
       log.error(message);
       report.setStatus(message);
     }
+    outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
   }
 
 
@@ -715,5 +735,23 @@ public class Validator {
     } catch (URISyntaxException usi) {
       log.error("URI syntax exxception: ", usi);
     }
+  }
+
+  private static boolean validateSchema(String schemaLocation, File xmlFile) {
+    boolean result = false;
+    ErrorHandlerIface handler = new ValidationErrorHandler();
+    try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
+      GenericSchemaValidator genericValidator = new GenericSchemaValidator();
+      genericValidator.setSchema(new URI(schemaLocation));
+      genericValidator.setErrorHandler(handler);
+      genericValidator.validate(br);
+      log.info(SCHEMA_OK_MESSAGE + xmlFile.getName());
+      result = true;
+    } catch (IOException | SAXException e) {
+      log.error("File Not Found or SAX Exception: ", e);
+    } catch (URISyntaxException usi) {
+      log.error("URI syntax exxception: ", usi);
+    }
+    return result;
   }
 }
