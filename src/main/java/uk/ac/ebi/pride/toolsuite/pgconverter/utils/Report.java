@@ -475,6 +475,13 @@ public class Report {
   }
 
   /**
+   * Sets new OK status.
+   **/
+  public void setStatusOK() {
+    this.status = "OK";
+  }
+
+  /**
    * Sets new uniquePTMs.
    *
    * @param uniquePTMs New value of uniquePTMs.
