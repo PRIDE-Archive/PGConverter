@@ -251,8 +251,7 @@
             <url>http://www.ebi.ac.uk/Tools/maven/repos/content/repositories/pst-snapshots</url>
         </snapshotRepository>
     </distributionManagement>
-
-
+    
     <scm>
         <connection>scm:git:https://github.com/PRIDE-Toolsuite/PGConverter.git</connection>
         <developerConnection>scm:git:https://github.com/PRIDE-Toolsuite/PGConverter.git</developerConnection>
