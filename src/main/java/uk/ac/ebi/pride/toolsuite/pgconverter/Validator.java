@@ -720,6 +720,7 @@ public class Validator {
   }
 
   private static void validateSchema(String schemaLocation, File xmlFile, File outputFile) {
+    log.info("Validating XML schema for: " + xmlFile.getPath() + " using schema: " + schemaLocation);
     ErrorHandlerIface handler = new ValidationErrorHandler();
     try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
       GenericSchemaValidator genericValidator = new GenericSchemaValidator();
