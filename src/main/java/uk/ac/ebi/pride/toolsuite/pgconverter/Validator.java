@@ -15,6 +15,8 @@ import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.tools.ErrorHandlerIface;
 import uk.ac.ebi.pride.tools.GenericSchemaValidator;
 import uk.ac.ebi.pride.tools.ValidationErrorHandler;
+import uk.ac.ebi.pride.tools.cl.PrideXmlClValidator;
+import uk.ac.ebi.pride.tools.cl.XMLValidationErrorHandler;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
 import uk.ac.ebi.pride.utilities.data.controller.cache.CacheEntry;
@@ -26,6 +28,7 @@ import uk.ac.ebi.pride.utilities.util.StringUtils;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -97,6 +100,7 @@ public class Validator {
   public static void validateMzdentML(CommandLine cmd) throws IOException{
     File file = new File(cmd.getOptionValue(ARG_MZID));
     List<File> filesToValidate = getFilesToValidate(file);
+    File mzid = filesToValidate.get(0);
     List<File> peakFiles = getPeakFiles(cmd);
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
@@ -104,19 +108,24 @@ public class Validator {
     File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
     if (fileType.equals(FileType.MZID)) {
       boolean valid = true; // assume true if not validating schema
-      if (cmd.hasOption(ARG_SCHEMA_VALIDATION)) {
-        if (outputFile != null) {
-          validateSchema(MZID_SCHEMA, filesToValidate.get(0), outputFile);
-        } else {
-          valid = validateSchema(MZID_SCHEMA, filesToValidate.get(0));
-        }
+      List<Object> schemaResult;
+      List<String> schemaErrors = null;
+      if (cmd.hasOption(ARG_SCHEMA_VALIDATION) || cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
+        schemaResult = validateMzidSchema(MZID_SCHEMA, mzid);
+        valid = (boolean) schemaResult.get(0);
+        schemaErrors = (List<String>) schemaResult.get(1);
       }
       if (valid) {
-        Object[] validation = validateAssayFile(filesToValidate.get(0), FileType.MZID, peakFiles);
-        report = (Report) validation[0];
-        assayFileSummary = (AssayFileSummary) validation[1];
+        if (cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
+          report.setStatusOK();
+        } else {
+          Object[] validation = validateAssayFile(mzid, FileType.MZID, peakFiles);
+          report = (Report) validation[0];
+          assayFileSummary = (AssayFileSummary) validation[1];
+        }
       } else {
-        String message = "ERROR: Supplied -mzid file failed XML schema validation: " + filesToValidate.get(0);
+        String message = "ERROR: Supplied -mzid file failed XML schema validation: " + filesToValidate.get(0) +
+            (schemaErrors==null ? "" : String.join(",", schemaErrors));
         log.error(message);
         report.setStatus(message);
       }
@@ -150,19 +159,25 @@ public class Validator {
     File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
     if (fileType.equals(FileType.PRIDEXML)) {
       boolean valid = true; // assume true if not validating schema
-      if (cmd.hasOption(ARG_SCHEMA_VALIDATION)) {
-        if (outputFile != null) {
-          validateSchema(PRIDE_XML_SCHEMA, pridexxml, outputFile);
-        } else {
-          validateSchema(PRIDE_XML_SCHEMA, pridexxml);
-        }
+      List<Object> schemaResult;
+      List<String> schemaErrors = null;
+      if (cmd.hasOption(ARG_SCHEMA_VALIDATION) || cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
+        schemaResult = validatePridexmlSchema(PRIDE_XML_SCHEMA, pridexxml);
+        valid = (boolean) schemaResult.get(0);
+        schemaErrors = (List<String>) schemaResult.get(1);
+        log.debug("Schema errors: " + String.join(",", schemaErrors));
       }
-      if (valid) {
-        Object[] validation = validateAssayFile(pridexxml, FileType.PRIDEXML, null);
-        report = (Report) validation[0];
-        assayFileSummary = (AssayFileSummary) validation[1];
+      if (valid ) {
+        if(cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
+            report.setStatusOK();
+          } else {
+          Object[] validation = validateAssayFile(pridexxml, FileType.PRIDEXML, null);
+          report = (Report) validation[0];
+          assayFileSummary = (AssayFileSummary) validation[1];
+        }
       } else {
-        String message = "ERROR: Supplied -pridexml file failed XML schema validation: " + filesToValidate.get(0);
+        String message = "ERROR: Supplied -pridexml file failed XML schema validation: " + filesToValidate.get(0) +
+            (schemaErrors==null ? "" : String.join(",", schemaErrors));
         log.error(message);
         report.setStatus(message);
       }
@@ -692,7 +707,7 @@ public class Validator {
           break;
       }
       if (StringUtils.isEmpty(report.getStatus())) {
-        report.setStatus("OK");
+        report.setStatusOK();
       }
     } catch (Exception e) {
       log.error("Exception when scanning assay file", e);
@@ -719,7 +734,7 @@ public class Validator {
                     "null"))));
   }
 
-  private static void validateSchema(String schemaLocation, File xmlFile, File outputFile) {
+  private static void validateMzidSchema(String schemaLocation, File xmlFile, File outputFile) {
     log.info("Validating XML schema for: " + xmlFile.getPath() + " using schema: " + schemaLocation);
     ErrorHandlerIface handler = new ValidationErrorHandler();
     try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
@@ -738,8 +753,10 @@ public class Validator {
     }
   }
 
-  private static boolean validateSchema(String schemaLocation, File xmlFile) {
-    boolean result = false;
+  private static List<Object> validateMzidSchema(String schemaLocation, File xmlFile) {
+    List<Object> result = new ArrayList<>();
+    result.add(0, false);
+    result.add(1, new ArrayList<String>());
     ErrorHandlerIface handler = new ValidationErrorHandler();
     try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
       GenericSchemaValidator genericValidator = new GenericSchemaValidator();
@@ -747,11 +764,34 @@ public class Validator {
       genericValidator.setErrorHandler(handler);
       genericValidator.validate(br);
       log.info(SCHEMA_OK_MESSAGE + xmlFile.getName());
-      result = true;
+      List<String> errorMessages = handler.getErrorMessages();
+      result.remove(0);
+      result.add(0, errorMessages.size()<1);
+      ((ArrayList<String>)result.get(1)).addAll(errorMessages);
     } catch (IOException | SAXException e) {
       log.error("File Not Found or SAX Exception: ", e);
     } catch (URISyntaxException usi) {
       log.error("URI syntax exxception: ", usi);
+    }
+    return result;
+  }
+
+  private static List<Object> validatePridexmlSchema(String schemaLocation, File pridexml) {
+    List<Object> result = new ArrayList<>();
+    result.add(0, false);
+    result.add(1, new ArrayList<String>());
+    try {
+      PrideXmlClValidator validator = new PrideXmlClValidator();
+      validator.setSchema(new URL(schemaLocation));
+      BufferedReader br = new BufferedReader(new FileReader(pridexml));
+      XMLValidationErrorHandler xveh = validator.validate(br);
+      String ERROR_MESSAGES = xveh.getErrorsFormattedAsPlainText();
+      log.error(ERROR_MESSAGES);
+      result.remove(0);
+      result.add(0, StringUtils.isEmpty(ERROR_MESSAGES));
+      ((ArrayList<String>)result.get(1)).add(ERROR_MESSAGES);
+    } catch (Exception e) {
+      log.error("Exception while validating PRIDE XML schema:", e);
     }
     return result;
   }
