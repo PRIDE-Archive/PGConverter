@@ -4,6 +4,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.AnalyzerInstrumentComponent;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.DetectorInstrumentComponent;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.Instrument;
@@ -11,6 +12,9 @@ import uk.ac.ebi.pride.archive.repo.assay.instrument.SourceInstrumentComponent;
 import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
+import uk.ac.ebi.pride.tools.ErrorHandlerIface;
+import uk.ac.ebi.pride.tools.GenericSchemaValidator;
+import uk.ac.ebi.pride.tools.ValidationErrorHandler;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
 import uk.ac.ebi.pride.utilities.data.controller.cache.CacheEntry;
@@ -20,6 +24,8 @@ import uk.ac.ebi.pride.utilities.data.core.Software;
 import uk.ac.ebi.pride.utilities.util.StringUtils;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,7 +43,9 @@ import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 public class Validator {
 
   private static final Logger log = LoggerFactory.getLogger(Validator.class);
-
+  private static final String PRIDE_XML_SCHEMA = "http://ftp.pride.ebi.ac.uk/pride/resources/schema/pride/pride.xsd";
+  private static final String MZID_SCHEMA = "http://www.psidev.info/sites/default/files/mzIdentML1.1.0.xsd";
+  public static final String SCHEMA_OK_MESSAGE = "XML schema validation OK on: ";
 
   /**
    * This class parses the command line arguments and beings the file validation.
@@ -93,17 +101,21 @@ public class Validator {
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
     FileType fileType = getFileType(filesToValidate.get(0));
+    File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
     if (fileType.equals(FileType.MZID)) {
-      Object[] validation = validateAssayFile(filesToValidate.get(0), FileType.MZID, peakFiles);
-      report = (Report) validation[0];
-      assayFileSummary = (AssayFileSummary) validation[1];
+      if (cmd.hasOption(ARG_SCHEMA_VALIDATION)) {
+        validateSchema(MZID_SCHEMA, filesToValidate.get(0), outputFile);
+      } else {
+        Object[] validation = validateAssayFile(filesToValidate.get(0), FileType.MZID, peakFiles);
+        report = (Report) validation[0];
+        assayFileSummary = (AssayFileSummary) validation[1];
+        outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
+      }
     } else {
       String message = "ERROR: Supplied -mzid file is not a valid mzIdentML file: " + filesToValidate.get(0);
       log.error(message);
       report.setStatus(message);
     }
-    File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
-    outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
   }
 
   /**
@@ -126,16 +138,20 @@ public class Validator {
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
     if (fileType.equals(FileType.PRIDEXML)) {
-      Object[] validation = validateAssayFile(pridexxml, FileType.PRIDEXML, null);
-      report = (Report) validation[0];
-      assayFileSummary = (AssayFileSummary) validation[1];
+      File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
+      if (cmd.hasOption(ARG_SCHEMA_VALIDATION)) {
+        validateSchema(PRIDE_XML_SCHEMA, pridexxml, outputFile);
+      } else {
+        Object[] validation = validateAssayFile(pridexxml, FileType.PRIDEXML, null);
+        report = (Report) validation[0];
+        assayFileSummary = (AssayFileSummary) validation[1];
+        outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
+      }
     } else {
       String message = "Supplied -pridexml file is not a valid PRIDE XML file: " + pridexxml.getAbsolutePath();
       log.error(message);
       report.setStatus(message);
     }
-    File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
-    outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
   }
 
 
@@ -681,5 +697,23 @@ public class Validator {
                 cachedDataAccessController.getCache().get(cacheEntry) instanceof Collection ?
                     ((Collection)cachedDataAccessController.getCache().get(cacheEntry)).size() :
                     "null"))));
+  }
+
+  private static void validateSchema(String schemaLocation, File xmlFile, File outputFile) {
+    ErrorHandlerIface handler = new ValidationErrorHandler();
+    try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
+      GenericSchemaValidator genericValidator = new GenericSchemaValidator();
+      genericValidator.setSchema(new URI(schemaLocation));
+      genericValidator.setErrorHandler(handler);
+      genericValidator.validate(br);
+      log.info(SCHEMA_OK_MESSAGE + xmlFile.getName());
+      if (outputFile!=null) {
+        Files.write(outputFile.toPath(), SCHEMA_OK_MESSAGE.getBytes());
+      }
+    } catch (IOException | SAXException e) {
+      log.error("File Not Found or SAX Exception: ", e);
+    } catch (URISyntaxException usi) {
+      log.error("URI syntax exxception: ", usi);
+    }
   }
 }

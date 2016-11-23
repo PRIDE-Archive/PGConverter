@@ -13,7 +13,6 @@ import uk.ac.ebi.pride.archive.repo.assay.software.SoftwareUserParam;
 import uk.ac.ebi.pride.archive.repo.project.*;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.model.Param;
-import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.utilities.data.core.*;
 
 import java.util.*;
@@ -31,6 +30,7 @@ public final class DataConversionUtil {
      *
      * @param strToCombine strings to be combined
      * @param separator    string separator
+     * @return the combined String
      */
     public static String combineToString(Set<String> strToCombine, String separator) {
         StringBuilder builder = new StringBuilder();

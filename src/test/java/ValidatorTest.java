@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertTrue;
+import static uk.ac.ebi.pride.toolsuite.pgconverter.Validator.SCHEMA_OK_MESSAGE;
 import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 
 /**
@@ -46,6 +48,29 @@ public class ValidatorTest {
   }
 
   /**
+   * This test performs xml schema validation on one example mzIdentML file which is related to a single peak .mgf file.
+   *
+   * @throws Exception if there are problems opening the example file.
+   */
+  @Test
+  public void testMzidSchemaValidator() throws Exception{
+    URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputMzidFile = new File(url.toURI());
+    url = ConverterTest.class.getClassLoader().getResource("test.mgf");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputMgfFile = new File(url.toURI());
+    File reportFile = File.createTempFile("testMzid", ".log");
+    String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_SCHEMA_VALIDATION, "-" + ARG_MZID, inputMzidFile.getPath(), "-" + ARG_PEAK, inputMgfFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
+    Validator.startValidation(MainApp.parseArgs(args));
+    checkXmlSchemaOkMessage(reportFile);
+  }
+
+  /**
    * This test validates one example PRIDE XML file.
    *
    * @throws Exception if there are problems opening the example file.
@@ -61,6 +86,37 @@ public class ValidatorTest {
     String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_PRIDEXML, inputPridexmlFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
     Validator.startValidation(MainApp.parseArgs(args));
     assertTrue("No errors reported during the validation of the PRIDE XML", reportStatus(reportFile));
+  }
+
+  /**
+   * This test performs xml schema validation on one example PRIDE XML file.
+   *
+   * @throws Exception if there are problems opening the example file.
+   */
+  @Test
+  public void testPridexmlSchemaValidator() throws Exception{
+    URL url = ConverterTest.class.getClassLoader().getResource("test.xml");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputPridexmlFile = new File(url.toURI());
+    File reportFile = File.createTempFile("testPridexml", ".log");
+    String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_SCHEMA_VALIDATION, "-" + ARG_PRIDEXML, inputPridexmlFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
+    Validator.startValidation(MainApp.parseArgs(args));
+    checkXmlSchemaOkMessage(reportFile);
+  }
+
+  /**
+   * This method checks if the XML schema validation has an OK message in the output report file.
+   *
+   * @param outputFile the output report file after XML schema validation.
+   */
+  private void checkXmlSchemaOkMessage(File outputFile) {
+    try (Stream<String> stream = Files.lines(outputFile.toPath())) {
+      assertTrue("No errors reported during the xml schema validation of the mzIdentML file", stream.findFirst().get().contains(SCHEMA_OK_MESSAGE));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   /**

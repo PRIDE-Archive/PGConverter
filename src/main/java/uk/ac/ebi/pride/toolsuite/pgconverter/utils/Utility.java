@@ -46,6 +46,7 @@ public class Utility {
   public static final String MS_CONTACT_EMAIL_AC = "MS:1000589";
   public static final String MS_SOFTWARE_NAME = "software";
   public static final String MS_INSTRUMENT_MODEL_NAME = "instrument model";
+  public static final String ARG_SCHEMA_VALIDATION = "schema";
 
   /**
    * The supported file types.

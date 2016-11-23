@@ -76,6 +76,7 @@ public class MainApp {
     options.addOption(ARG_REDIS_CHANNEL, true, "Redis channel");
     options.addOption(ARG_REDIS_MESSAGE, true, "Redis message");
     options.addOption(ARG_SKIP_SERIALIZATION, false, "Redis message");
+    options.addOption(ARG_SCHEMA_VALIDATION, false, "XML Schema validation");
     CommandLineParser parser = new DefaultParser();
     return parser.parse(options, args);
   }
