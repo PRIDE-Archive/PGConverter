@@ -6,4 +6,4 @@ jdk:
 # whitelist
 branches:
   only:
-- master
+    - master
