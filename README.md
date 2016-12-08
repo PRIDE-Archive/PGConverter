@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/PRIDE-Toolsuite/PGConverter.svg?branch=master)](https://travis-ci.org/PRIDE-Toolsuite/PGConverter)
 # ProteoGenomics Converter tool (PGConverter)
 [Download PGConverter](https://drive.google.com/open?id=0ByPwkIg-BdVzRGtWY1JvQVdGbWc)
 
