@@ -1,5 +1,5 @@
 # ProteoGenomics Converter tool (PGConverter)
-[Download PGConverter Latest: 1.2](https://drive.google.com/open?id=0ByPwkIg-BdVzRGtWY1JvQVdGbWc)<br/>[Download PGConverter Pre-release: 1.2-SNAPSHOT](https://drive.google.com/open?id=0ByPwkIg-BdVzOUhnWUFGLUZubFk)
+[Download PGConverter Latest: 1.2](https://drive.google.com/open?id=0ByPwkIg-BdVzRGtWY1JvQVdGbWc)<br/>[Download PGConverter Pre-release: 1.2-SNAPSHOT](https://drive.google.com/open?id=0ByPwkIg-BdVzeHBKVFE2VVNXa28)
 
 
 This library is primarily to offer a command-line tool to convert between the following formats for proteogenomics related data:
