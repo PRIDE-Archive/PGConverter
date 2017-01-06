@@ -59,12 +59,18 @@ public class Converter {
     File outputFile = null;
     String outputFormat = null;
     if (cmd.hasOption(ARG_OUTPUTFILE)) {
-      outputFile  = new File(cmd.getOptionValue(ARG_OUTPUTFILE));
+      outputFile = new File(cmd.getOptionValue(ARG_OUTPUTFILE));
       outputFormat = FilenameUtils.getExtension(outputFile.getAbsolutePath()).toLowerCase();
     } else if (cmd.hasOption(ARG_OUTPUTTFORMAT)) {
       outputFormat =  cmd.getOptionValue(ARG_OUTPUTTFORMAT).toLowerCase();
       if (inputFile != null) {
-        outputFile = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + outputFormat);
+        if (outputFormat.equalsIgnoreCase(ARG_PROBED)) {
+          outputFile = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.PROBED.toString().toLowerCase());
+        } else if (outputFormat.equalsIgnoreCase(ARG_BIGBED)) {
+          outputFile = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + FileType.BIGBED.toString().toLowerCase());
+        } else {
+          outputFile = new File(FilenameUtils.removeExtension(inputFile.getAbsolutePath()) + "." + outputFormat);
+        }
       }
     } else {
       log.error("No output file or output format specified.");
