@@ -849,10 +849,8 @@ public class Validator {
         log.info(SCHEMA_OK_MESSAGE + pridexml.getName());
       } else {
         log.error(ERROR_MESSAGES);
+        ((ArrayList<String>)result.get(1)).addAll(xveh.getErrorsAsList());
       }
-      result.remove(0);
-      result.add(0, StringUtils.isEmpty(ERROR_MESSAGES));
-      ((ArrayList<String>)result.get(1)).addAll(xveh.getErrorsAsList());
     } catch (Exception e) {
       log.error("Exception while validating PRIDE XML schema:", e);
     }
