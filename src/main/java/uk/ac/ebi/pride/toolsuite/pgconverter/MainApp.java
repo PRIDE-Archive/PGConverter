@@ -42,7 +42,7 @@ public class MainApp {
       }
       Utility.exit(cmd);
     } catch (Exception e) {
-      log.error("Exception while processing files: " + e);
+      log.error("Exception while processing files: ", e);
     }
   }
 
