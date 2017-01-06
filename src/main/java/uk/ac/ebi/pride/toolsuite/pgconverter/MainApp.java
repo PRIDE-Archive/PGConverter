@@ -42,7 +42,7 @@ public class MainApp {
       }
       Utility.exit(cmd);
     } catch (Exception e) {
-      log.error("Exception while processing files: " + e);
+      log.error("Exception while processing files: ", e);
     }
   }
 
@@ -76,6 +76,8 @@ public class MainApp {
     options.addOption(ARG_REDIS_CHANNEL, true, "Redis channel");
     options.addOption(ARG_REDIS_MESSAGE, true, "Redis message");
     options.addOption(ARG_SKIP_SERIALIZATION, false, "Redis message");
+    options.addOption(ARG_SCHEMA_VALIDATION, false, "XML Schema validation");
+    options.addOption(ARG_SCHEMA_ONLY_VALIDATION, false, "XML Schema-only validation");
     CommandLineParser parser = new DefaultParser();
     return parser.parse(options, args);
   }
