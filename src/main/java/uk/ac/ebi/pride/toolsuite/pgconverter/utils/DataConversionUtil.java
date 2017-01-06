@@ -30,6 +30,7 @@ public final class DataConversionUtil {
      *
      * @param strToCombine strings to be combined
      * @param separator    string separator
+     * 
      * @return the combined String
      */
     public static String combineToString(Set<String> strToCombine, String separator) {
