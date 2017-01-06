@@ -24,7 +24,7 @@ import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 public class ValidatorTest {
 
   /**
-   * This test validates one example mzIdentML file which is related to a single peak .mgf file.
+   * This test validates one example mzIdentML file which is related to a single peak .mgf file (without schema validation).
    *
    * @throws Exception if there are problems opening the example file.
    */
@@ -85,7 +85,7 @@ public class ValidatorTest {
   }
 
   /**
-   * This test validates one example PRIDE XML file.
+   * This test validates one example PRIDE XML file (without schema validation).
    *
    * @throws Exception if there are problems opening the example file.
    */
@@ -103,13 +103,13 @@ public class ValidatorTest {
   }
 
   /**
-   * This test performs xml schema-only and semantic validation on one example PRIDE XML file.
+   * This test performs xml schema-only validation on one example PRIDE XML file.
    *
    * @throws Exception if there are problems opening the example file.
    */
   @Test
   public void testPridexmlSchemaValidator() throws Exception{
-    URL url = ConverterTest.class.getClassLoader().getResource("pride-example.xml");
+    URL url = ConverterTest.class.getClassLoader().getResource("test.xml");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }

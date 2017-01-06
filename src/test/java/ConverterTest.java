@@ -43,7 +43,7 @@ public class ConverterTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
-  public void testConvertPridexmloMztab() throws Exception{
+  public void testConvertPridexmlToMztab() throws Exception{
     URL url = ConverterTest.class.getClassLoader().getResource("test.xml");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");

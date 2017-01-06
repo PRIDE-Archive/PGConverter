@@ -734,15 +734,22 @@ public class Validator {
                     "null"))));
   }
 
-  private static void validateMzidSchema(String schemaLocation, File xmlFile, File outputFile) {
-    log.info("Validating XML schema for: " + xmlFile.getPath() + " using schema: " + schemaLocation);
+  /**
+   * This method validates an input mzIdentML file according to the supplied schema, and writes the output to a file.
+   *
+   * @param schemaLocation the location of the schema
+   * @param mzIdentML the input mzIdentML file.
+   * @param outputFile the output log file with an OK message if there were no errors
+   */
+  private static void validateMzidSchema(String schemaLocation, File mzIdentML, File outputFile) {
+    log.info("Validating mzIdentML XML schema for: " + mzIdentML.getPath() + " using schema: " + schemaLocation);
     ErrorHandlerIface handler = new ValidationErrorHandler();
-    try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
+    try (BufferedReader br = new BufferedReader(new FileReader(mzIdentML))) {
       GenericSchemaValidator genericValidator = new GenericSchemaValidator();
       genericValidator.setSchema(new URI(schemaLocation));
       genericValidator.setErrorHandler(handler);
       genericValidator.validate(br);
-      log.info(SCHEMA_OK_MESSAGE + xmlFile.getName());
+      log.info(SCHEMA_OK_MESSAGE + mzIdentML.getName());
       if (outputFile!=null) {
         Files.write(outputFile.toPath(), SCHEMA_OK_MESSAGE.getBytes());
       }
@@ -753,17 +760,25 @@ public class Validator {
     }
   }
 
-  private static List<Object> validateMzidSchema(String schemaLocation, File xmlFile) {
+  /**
+   * This method validates an input mzIdentML file according to the supplied schema, and returns the outcome.
+   *
+   * @param schemaLocation the location of the schema
+   * @param mzIdentML the input mzIdentML file.
+   * @return a list of two elements: the first element is a boolean (true or false) if the file passed validation. If false, the 2nd element in the list of the error messages.
+   */
+  private static List<Object> validateMzidSchema(String schemaLocation, File mzIdentML) {
+    log.info("Validating mzIdentML XML schema for: " + mzIdentML.getPath() + " using schema: " + schemaLocation);
     List<Object> result = new ArrayList<>();
     result.add(0, false);
     result.add(1, new ArrayList<String>());
     ErrorHandlerIface handler = new ValidationErrorHandler();
-    try (BufferedReader br = new BufferedReader(new FileReader(xmlFile))) {
+    try (BufferedReader br = new BufferedReader(new FileReader(mzIdentML))) {
       GenericSchemaValidator genericValidator = new GenericSchemaValidator();
       genericValidator.setSchema(new URI(schemaLocation));
       genericValidator.setErrorHandler(handler);
       genericValidator.validate(br);
-      log.info(SCHEMA_OK_MESSAGE + xmlFile.getName());
+      log.info(SCHEMA_OK_MESSAGE + mzIdentML.getName());
       List<String> errorMessages = handler.getErrorMessages();
       result.remove(0);
       result.add(0, errorMessages.size()<1);
@@ -776,7 +791,49 @@ public class Validator {
     return result;
   }
 
+  /**
+   *
+   * This method validates an input PRIDE XML file according to the supplied schema, and writes the output to a file.
+   *
+   * @param schemaLocation the location of the schema
+   * @param pridexml the input PRIDE XML file.
+   * @param outputFile the output log file with an OK message if there were no errors
+   */
+  private static void validatePridexmlSchema(String schemaLocation, File pridexml, File outputFile) {
+    log.info("Validating PRIDE XML schema for: " + pridexml.getPath() + " using schema: " + schemaLocation);
+    try {
+      PrideXmlClValidator validator = new PrideXmlClValidator();
+      validator.setSchema(new URL(schemaLocation));
+      BufferedReader br = new BufferedReader(new FileReader(pridexml));
+      XMLValidationErrorHandler xveh = validator.validate(br);
+      final String ERROR_MESSAGES = xveh.getErrorsFormattedAsPlainText();
+      if (StringUtils.isEmpty(ERROR_MESSAGES)) {
+        log.info(SCHEMA_OK_MESSAGE + pridexml.getName());
+        if (outputFile!=null) {
+          Files.write(outputFile.toPath(), SCHEMA_OK_MESSAGE.getBytes());
+        }
+      } else {
+        log.error(ERROR_MESSAGES);
+        if (outputFile!=null) {
+          Files.write(outputFile.toPath(), ERROR_MESSAGES.getBytes());
+        }
+      }
+    } catch (IOException | SAXException e) {
+      log.error("File Not Found or SAX Exception: ", e);
+    } catch (Exception e) {
+      log.error("Exception while validating PRIDE XML schema:", e);
+    }
+  }
+
+  /**
+   * This method validates an input mzIdentML file according to the supplied schema, and returns the outcome.
+   *
+   * @param schemaLocation the location of the schema
+   * @param pridexml the input PRIDE XML file.
+   * @return a list of two elements: the first element is a boolean (true or false) if the file passed validation. If false, the 2nd element in the list of the error messages.
+   */
   private static List<Object> validatePridexmlSchema(String schemaLocation, File pridexml) {
+    log.info("Validating PRIDE XML schema for: " + pridexml.getPath() + " using schema: " + schemaLocation);
     List<Object> result = new ArrayList<>();
     result.add(0, false);
     result.add(1, new ArrayList<String>());
@@ -785,11 +842,17 @@ public class Validator {
       validator.setSchema(new URL(schemaLocation));
       BufferedReader br = new BufferedReader(new FileReader(pridexml));
       XMLValidationErrorHandler xveh = validator.validate(br);
-      String ERROR_MESSAGES = xveh.getErrorsFormattedAsPlainText();
-      log.error(ERROR_MESSAGES);
+      final String ERROR_MESSAGES = xveh.getErrorsFormattedAsPlainText();
       result.remove(0);
       result.add(0, StringUtils.isEmpty(ERROR_MESSAGES));
-      ((ArrayList<String>)result.get(1)).add(ERROR_MESSAGES);
+      if (StringUtils.isEmpty(ERROR_MESSAGES)) {
+        log.info(SCHEMA_OK_MESSAGE + pridexml.getName());
+      } else {
+        log.error(ERROR_MESSAGES);
+      }
+      result.remove(0);
+      result.add(0, StringUtils.isEmpty(ERROR_MESSAGES));
+      ((ArrayList<String>)result.get(1)).addAll(xveh.getErrorsAsList());
     } catch (Exception e) {
       log.error("Exception while validating PRIDE XML schema:", e);
     }
