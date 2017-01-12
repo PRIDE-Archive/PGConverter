@@ -31,8 +31,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
@@ -63,6 +65,8 @@ public class Validator {
       validatePrideXML(cmd);
       } else if (cmd.hasOption(ARG_MZTAB)) {
       validateMzTab(cmd);
+    } else if (cmd.hasOption(ARG_PROBED)) {
+      validateProBed(cmd);
     } else {
       log.error("Unable to validate unknown input file type");
     }
@@ -855,5 +859,277 @@ public class Validator {
       log.error("Exception while validating PRIDE XML schema:", e);
     }
     return result;
+  }
+
+  /**
+   * This method validates and input proBed file, checks its columns according to the BED column format, and potentially saves the output to a report file.
+   * @param proBed the input proBed file.
+   * @param columnFormat the BED column format, e.g the default BED12+13.
+   * @param reportFile the file to save the output to.
+   */
+  private static void validateProBed(File proBed, String columnFormat, File reportFile) {
+    log.info("Validation proBed file: " + proBed.getPath() + " using column format: " + columnFormat);
+    Report report = new Report();
+    report.setFileName(proBed.getPath());
+    Set<String> errorMessages = new HashSet<>();
+    int defaultBedColumnCount = Integer.parseInt(columnFormat.substring(columnFormat.indexOf("D")+1, columnFormat.indexOf('+')));
+    int proBedOptionalColumnsCount = Integer.parseInt(columnFormat.substring(columnFormat.indexOf("+")+1));
+    try (Stream<String> stream = Files.lines(proBed.toPath())) {
+      Set<String> uniqueNames = ConcurrentHashMap.newKeySet();
+      stream.forEach(s -> {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(s)) {
+          logProbedError("Empty blank line encountered", errorMessages);
+        } else {
+          if (s.charAt(0)=='#') {
+            log.info("Comment: " + s);
+          } else {
+            String[] fields = s.split("\\t");
+            if (fields.length!=(defaultBedColumnCount+proBedOptionalColumnsCount)) {
+              final int TOTAL_COLUMNS = defaultBedColumnCount+proBedOptionalColumnsCount;
+              logProbedError("Incorrect number of columns found. Expected " + TOTAL_COLUMNS + " instead have : " + fields.length + ". Line content: " + s, errorMessages);
+            } else {
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[0])) {
+                logProbedError("1st column 'chrom' field must not be empty. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[1]) || !fields[1].matches("\\d+")) {
+                logProbedError("2nd column 'chromStart' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[2]) || !fields[2].matches("\\d+")) {
+                logProbedError("3rd column 'chromEnd' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              }
+              try {
+                int chromStart = Integer.parseInt(fields[1]);
+                int chromEnd = Integer.parseInt(fields[2]);
+                if (chromEnd<chromStart) {
+                  logProbedError("2nd and 3rd columns 'chromStart' and 'chromEnd' fields must be in ascending order. Line content: " + s, errorMessages);
+                }
+              } catch (NumberFormatException nfe) {
+                logProbedError("2nd and 3rd columns 'chromStart' or 'chromEnd' fields cannot be cast to an integer. Line content: " + s, errorMessages);
+              }
+              String name = fields[3];
+              if (org.apache.commons.lang3.StringUtils.isEmpty(name)) {
+                logProbedError("4th column 'name' field must not be empty. Line content: " + s, errorMessages);
+              } else {
+                if (uniqueNames.contains(name)) {
+                  logProbedError("4th column 'name' field must be unique. Line content: " + s, errorMessages);
+                } else {
+                  uniqueNames.add(name);
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[4]) || !fields[4].matches("\\d+")) {
+                logProbedError("5th column 'score' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              } else {
+                try {
+                  int score = Integer.parseInt(fields[4]);
+                  if (score<0 || score >1000) {
+                    logProbedError("5th column 'score' field must be between 0 - 1000 inclusive. Line content: " + s, errorMessages);
+                  }
+                } catch (NumberFormatException nfe) {
+                  logProbedError("5th column 'score' field cannot be cast to an integer. Line content: " + s, errorMessages);
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
+                logProbedError("6th column 'strand' field must not be empty and must be either '-' or '+'. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[6]) || !fields[6].matches("\\d+")) {
+                logProbedError("7th column 'thickStart' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[7]) || !fields[7].matches("\\d+")) {
+                logProbedError("8th column 'thickEnd' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              }
+              int thickStart = Integer.parseInt(fields[6]);
+              int thickEnd = Integer.parseInt(fields[7]);
+              if (thickEnd<thickStart) {
+                logProbedError("7th and 8th columns 'thickStart' and 'thickEnd' fields must be in ascending order. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[8]) || (!fields[8].equals("0"))) {
+                logProbedError("9th column 'reserved' field must not be empty and must be  '0'. Line contnent: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[9]) || !fields[9].matches("\\d+")) {
+                logProbedError("10th column 'blockCount' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              }
+              int blockCount = Integer.parseInt(fields[9]);
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[10])) {
+                logProbedError("11th column 'blockSizes' field must not be empty. Line content: " + s, errorMessages);
+              } else {
+                String blockSizes = fields[10];
+                String[] blockSizesSplit = blockSizes.split(",");
+                if (blockSizesSplit.length!=blockCount) {
+                  logProbedError("11th column 'blockSizes' field does not have the same amount of blocks as mentioned in 'blockCount'. Line content: " + s, errorMessages);
+                }
+                for (String blockSizePart : blockSizesSplit) {
+                  if (org.apache.commons.lang3.StringUtils.isEmpty(blockSizePart) || !blockSizePart.matches("\\d+")) {
+                    logProbedError("11th column 'blockSizes' field must not be empty and must contain at least one digit, separated by commas. Line content: " + s, errorMessages);
+                  }
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[11])) {
+                logProbedError("12th column 'chromStarts' field must not be empty. Line content: " + s, errorMessages);
+              } else {
+                String chromStarts = fields[11];
+                String[] chromStartsSplit = chromStarts.split(",");
+                if (chromStartsSplit.length!=blockCount) {
+                  logProbedError("12th column 'chromStarts' field does not have the same amount of blocks as mentioned in 'blockCount'. Line content: " + s, errorMessages);
+                }
+                for (String chromStartsPart : chromStartsSplit) {
+                  if (org.apache.commons.lang3.StringUtils.isEmpty(chromStartsPart) || !chromStartsPart.matches("\\d+")) {
+                    logProbedError("12th column 'chromStarts' field must not be empty and must contain at least one digit, separated by commas. Line content: " + s, errorMessages);
+                  }
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[12])) {
+                logProbedError("13th column 'proteinAccession' field must not be empty. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[13]) || !fields[13].matches("[a-zA-Z]+")) {
+                logProbedError("14th column 'peptideSequence' field must not be empty and must contain at least one letter. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[14]) ||
+                  (!fields[14].equals("unique") &&
+                      !fields[14].equals("not-unique[same-set]") &&
+                      !fields[14].equals("not-unique[subset]") &&
+                      !fields[14].equals("not-unique[conflict]") &&
+                      !fields[14].equals("not-unique[unknown]"))) {
+                logProbedError("15th column 'uniqueness' field must not be empty and must be either: 1. not-unique[same-set], " +
+                    "2. not-unique[subset], 3. not-unique[conflict], or 4. not-unique[unknown]. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[15])) {
+                logProbedError("16th column 'genomeRefVersion' field must not be empty. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[16])) {
+                logProbedError("17th column 'psmScore' field must not be empty. Line content: " + s, errorMessages);
+              } else {
+                try {
+                  double psmScore = Double.parseDouble(fields[16]);
+                } catch (NumberFormatException nfe) {
+                  logProbedError("17th column 'psmScore' field cannot be case to a Double. Line content: " + s, errorMessages);
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[17])) {
+                logProbedError("18th column 'fdr' field must not be empty. Line content: " + s, errorMessages);
+              } else {
+                try {
+                  double fdr = Double.parseDouble(fields[17]);
+                } catch (NumberFormatException nfe) {
+                  logProbedError("18th column 'fdr' field cannot be case to a Double. Line content: " + s, errorMessages);
+                }
+              }
+              String modifications = fields[18];
+              if (org.apache.commons.lang3.StringUtils.isEmpty(modifications)) {
+                logProbedError("19th column 'modifications' field must not be empty. Line content: " + s, errorMessages);
+              } else {
+                if (!modifications.equals(".")) {
+                  String[] modificationsArray = modifications.split(",");
+                  if (modificationsArray.length<1) {
+                    logProbedError("19th column 'modifications' field must either be '.' for no modifications, or contain modifications of the format like '5-UNIMOD:4'. Line content: " + s, errorMessages);
+                  } else {
+                    for (String modification : modificationsArray) {
+                      modification = modification.trim();
+                      if (!modification.matches("\\d+-\\w+:\\d+")) {
+                        logProbedError("19th column 'modifications' field must either be '.' for no modifications, or contain modifications of the format like '5-UNIMOD:4'. Line content: " + s, errorMessages);
+                      }
+                    }
+                  }
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[19]) || !fields[19].matches(".*\\d+.*")) {
+                logProbedError("20th column 'charge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              } else {
+                try {
+                  int charge = Integer.parseInt(fields[19]);
+                } catch (NumberFormatException nfe) {
+                  logProbedError("20th column 'charge' field cannot be case to an Integer. Line content: " + s, errorMessages);
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[20]) || !fields[20].matches("\\d+.*")) {
+                logProbedError("21st column 'expMassToCharge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              } else {
+                try {
+                  double expMassToCharge = Double.parseDouble(fields[20]);
+                } catch (NumberFormatException nfe) {
+                  logProbedError("21st column 'expMassToCharge' field cannot be case to a Double. Line content: " + s, errorMessages);
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[21]) || !fields[21].matches("\\d+.*")) {
+                logProbedError("22nd column 'calcMassToCharge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              } else {
+                try {
+                  double calcMassToCharge = Double.parseDouble(fields[21]);
+                } catch (NumberFormatException nfe) {
+                  logProbedError("22nd column 'calcMassToCharge' field cannot be case to a Double. Line content: " + s, errorMessages);
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[22]) || !fields[22].matches("\\d+.*")) {
+                logProbedError("23rd column 'psmRank' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
+              } else {
+                try {
+                  int psmRank = Integer.parseInt(fields[22]);
+                } catch (NumberFormatException nfe) {
+                  logProbedError("23rd column 'psmRank' field cannot be case to an Integer. Line content: " + s, errorMessages);
+                }
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[23])) {
+                logProbedError("24th column 'datasetID' field must not be empty. Line content: " + s, errorMessages);
+              }
+              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[24])) {
+                logProbedError("25th column 'uri' field must not be empty. Line content: " + s, errorMessages);
+              }
+            }
+          }
+        }
+      });
+      if (errorMessages.size()>0) {
+        StringBuffer errorsReported = new StringBuffer();
+        errorMessages.stream().limit(100).forEach(s -> errorsReported.append(s + "\n"));
+        report.setStatus("ERROR: " + errorMessages.size() + " problems encountered. See below for (up to) the first 100 reported errors : \n" + errorsReported);
+      } else {
+        report.setStatusOK();
+      }
+      log.info(report.toString());
+      if (reportFile!=null) {
+        writeProbedReport(report, reportFile);
+      }
+    } catch (IOException e) {
+      final String PROBED_IO_MESSAGE = "Error while reading proBed file.";
+      log.error(PROBED_IO_MESSAGE + e);
+      if (reportFile!=null) {
+        report.setStatus(PROBED_IO_MESSAGE);
+        writeProbedReport(report, reportFile);
+      }
+    }
+  }
+
+  /**
+   * This method starts the validation of a proBed file according to the input command line arguments.
+   * @param cmd command line arguments.
+
+   */
+  private static void validateProBed(CommandLine cmd) {
+    File proBed = new File(cmd.getOptionValue(ARG_PROBED));
+    String COLUMN_FORMAT = cmd.hasOption(ARG_BED_COLUMN_FORMAT) ? cmd.getOptionValue(ARG_BED_COLUMN_FORMAT) : "BED12+13";
+    File REPORT_FILE = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
+    validateProBed(proBed, COLUMN_FORMAT, REPORT_FILE);
+  }
+
+  /**
+   * This method logs the proBed errors to the error log, and to a Set for them to be iterated over.
+   * @param errorMessage the proBed error message.
+   * @param errors the Set of errors for the message to be added to.
+   */
+  private static void logProbedError(String errorMessage, Set<String> errors) {
+    log.error(errorMessage);
+    errors.add(errorMessage);
+  }
+
+  /**
+   * This method writes the proBed report to a file.
+   * @param report the proBed report
+   * @param reportFile the file to write the report to.
+   */
+  private static void writeProbedReport(Report report, File reportFile) {
+    try {
+      Files.write(reportFile.toPath(), report.toString().getBytes());
+    } catch (Exception e) {
+      log.error("Error trying to write to report file: " + reportFile.getPath());
+    }
   }
 }

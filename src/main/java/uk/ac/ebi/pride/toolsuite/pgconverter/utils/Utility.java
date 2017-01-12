@@ -48,6 +48,8 @@ public class Utility {
   public static final String MS_INSTRUMENT_MODEL_NAME = "instrument model";
   public static final String ARG_SCHEMA_VALIDATION = "schema";
   public static final String ARG_SCHEMA_ONLY_VALIDATION = "schemaonly";
+  public static final String ARG_BED_COLUMN_FORMAT = "columnformat";
+
 
   /**
    * The supported file types.

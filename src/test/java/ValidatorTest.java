@@ -170,5 +170,17 @@ public class ValidatorTest {
     return result;
   }
 
+  @Test
+  public void testProbedValidator() throws Exception{
+    URL url = ConverterTest.class.getClassLoader().getResource("test.pro.bed");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputProbedFile = new File(url.toURI());
+    File reportFile = File.createTempFile("testProbed", ".log");
+    String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_PROBED, inputProbedFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
+    Validator.startValidation(MainApp.parseArgs(args));
+    assertTrue("No errors reported during the validation of the mzTab file", reportStatus(reportFile));
+  }
   //TODO proBed validation?
 }
