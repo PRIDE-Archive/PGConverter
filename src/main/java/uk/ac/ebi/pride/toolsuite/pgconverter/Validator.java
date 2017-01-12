@@ -1134,6 +1134,7 @@ public class Validator {
     }
     return result;
   }
+
   /**
    * This method checks if a field is a double.
    * @param field the field to check.
@@ -1153,6 +1154,7 @@ public class Validator {
     }
     return result;
   }
+
   /**
    * This method checks if a field is a character.
    * @param field the field to check.
