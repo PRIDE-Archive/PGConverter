@@ -876,7 +876,7 @@ public class Validator {
     int proBedOptionalColumnsCount = Integer.parseInt(columnFormat.substring(columnFormat.indexOf("+")+1));
     try (Stream<String> stream = Files.lines(proBed.toPath())) {
       Set<String> uniqueNames = ConcurrentHashMap.newKeySet();
-      stream.forEach(s -> {
+      stream.parallel().forEach(s -> {
         if (org.apache.commons.lang3.StringUtils.isEmpty(s)) {
           logProbedError("Empty blank line encountered", errorMessages);
         } else {
@@ -888,26 +888,23 @@ public class Validator {
               final int TOTAL_COLUMNS = defaultBedColumnCount+proBedOptionalColumnsCount;
               logProbedError("Incorrect number of columns found. Expected " + TOTAL_COLUMNS + " instead have : " + fields.length + ". Line content: " + s, errorMessages);
             } else {
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[0])) {
+              if (!validProbedFieldNullable(fields[0], false) && !validProbedFieldString(fields[0])) {
                 logProbedError("1st column 'chrom' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[1]) || !fields[1].matches("\\d+")) {
+              if (!validProbedFieldNullable(fields[1], false) || !validProbedFieldInteger(fields[1])) {
                 logProbedError("2nd column 'chromStart' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[2]) || !fields[2].matches("\\d+")) {
+              if (!validProbedFieldNullable(fields[2], false) || !validProbedFieldInteger(fields[2])) {
                 logProbedError("3rd column 'chromEnd' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              try {
+              } else {
                 int chromStart = Integer.parseInt(fields[1]);
                 int chromEnd = Integer.parseInt(fields[2]);
                 if (chromEnd<chromStart) {
                   logProbedError("2nd and 3rd columns 'chromStart' and 'chromEnd' fields must be in ascending order. Line content: " + s, errorMessages);
                 }
-              } catch (NumberFormatException nfe) {
-                logProbedError("2nd and 3rd columns 'chromStart' or 'chromEnd' fields cannot be cast to an integer. Line content: " + s, errorMessages);
               }
               String name = fields[3];
-              if (org.apache.commons.lang3.StringUtils.isEmpty(name)) {
+              if (!validProbedFieldNullable(name, false) && !validProbedFieldString(name)) {
                 logProbedError("4th column 'name' field must not be empty. Line content: " + s, errorMessages);
               } else {
                 if (uniqueNames.contains(name)) {
@@ -916,25 +913,21 @@ public class Validator {
                   uniqueNames.add(name);
                 }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[4]) || !fields[4].matches("\\d+")) {
+              if (!validProbedFieldNullable(fields[4], false) || !validProbedFieldInteger(fields[4])) {
                 logProbedError("5th column 'score' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               } else {
-                try {
-                  int score = Integer.parseInt(fields[4]);
-                  if (score<0 || score >1000) {
-                    logProbedError("5th column 'score' field must be between 0 - 1000 inclusive. Line content: " + s, errorMessages);
-                  }
-                } catch (NumberFormatException nfe) {
-                  logProbedError("5th column 'score' field cannot be cast to an integer. Line content: " + s, errorMessages);
+                int score = Integer.parseInt(fields[4]);
+                if (score<0 || score >1000) {
+                  logProbedError("5th column 'score' field must be between 0 - 1000 inclusive. Line content: " + s, errorMessages);
                 }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
+              if (!validProbedFieldNullable(fields[5], false) || !validProbedFieldCharacter(fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
                 logProbedError("6th column 'strand' field must not be empty and must be either '-' or '+'. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[6]) || !fields[6].matches("\\d+")) {
+              if (!validProbedFieldNullable(fields[6], false) || !validProbedFieldInteger(fields[6])) {
                 logProbedError("7th column 'thickStart' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[7]) || !fields[7].matches("\\d+")) {
+              if (!validProbedFieldNullable(fields[7], false) || !validProbedFieldInteger(fields[7])) {
                 logProbedError("8th column 'thickEnd' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
               int thickStart = Integer.parseInt(fields[6]);
@@ -977,13 +970,13 @@ public class Validator {
                   }
                 }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[12])) {
+              if (!validProbedFieldNullable(fields[12], false) && !validProbedFieldString(fields[12])) {
                 logProbedError("13th column 'proteinAccession' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[13]) || !fields[13].matches("[a-zA-Z]+")) {
+              if (!validProbedFieldNullable(fields[13], false) && !validProbedFieldString(fields[13])) {
                 logProbedError("14th column 'peptideSequence' field must not be empty and must contain at least one letter. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[14]) ||
+              if (!validProbedFieldNullable(fields[14], false) && !validProbedFieldString(fields[14]) ||
                   (!fields[14].equals("unique") &&
                       !fields[14].equals("not-unique[same-set]") &&
                       !fields[14].equals("not-unique[subset]") &&
@@ -995,26 +988,14 @@ public class Validator {
               if (org.apache.commons.lang3.StringUtils.isEmpty(fields[15])) {
                 logProbedError("16th column 'genomeRefVersion' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[16])) {
+              if (!validProbedFieldNullable(fields[16], false) || !validProbedFieldDouble(fields[16])) {
                 logProbedError("17th column 'psmScore' field must not be empty. Line content: " + s, errorMessages);
-              } else {
-                try {
-                  double psmScore = Double.parseDouble(fields[16]);
-                } catch (NumberFormatException nfe) {
-                  logProbedError("17th column 'psmScore' field cannot be case to a Double. Line content: " + s, errorMessages);
-                }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[17])) {
+              if (!validProbedFieldNullable(fields[17], false) || !validProbedFieldDouble(fields[17])) {
                 logProbedError("18th column 'fdr' field must not be empty. Line content: " + s, errorMessages);
-              } else {
-                try {
-                  double fdr = Double.parseDouble(fields[17]);
-                } catch (NumberFormatException nfe) {
-                  logProbedError("18th column 'fdr' field cannot be case to a Double. Line content: " + s, errorMessages);
-                }
               }
               String modifications = fields[18];
-              if (org.apache.commons.lang3.StringUtils.isEmpty(modifications)) {
+              if (!validProbedFieldNullable(modifications, false) && !validProbedFieldString(modifications)) {
                 logProbedError("19th column 'modifications' field must not be empty. Line content: " + s, errorMessages);
               } else {
                 if (!modifications.equals(".")) {
@@ -1031,25 +1012,13 @@ public class Validator {
                   }
                 }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[19]) || !fields[19].matches(".*\\d+.*")) {
+              if (!validProbedFieldNullable(fields[19], false) || !validProbedFieldInteger(fields[19])) {
                 logProbedError("20th column 'charge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              } else {
-                try {
-                  int charge = Integer.parseInt(fields[19]);
-                } catch (NumberFormatException nfe) {
-                  logProbedError("20th column 'charge' field cannot be case to an Integer. Line content: " + s, errorMessages);
-                }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[20]) || !fields[20].matches("\\d+.*")) {
+              if (!validProbedFieldNullable(fields[20], false) || !validProbedFieldDouble(fields[20])) {
                 logProbedError("21st column 'expMassToCharge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              } else {
-                try {
-                  double expMassToCharge = Double.parseDouble(fields[20]);
-                } catch (NumberFormatException nfe) {
-                  logProbedError("21st column 'expMassToCharge' field cannot be case to a Double. Line content: " + s, errorMessages);
-                }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[21]) || !fields[21].matches("\\d+.*")) {
+              if (!validProbedFieldNullable(fields[21], false) || !validProbedFieldDouble(fields[21])) {
                 logProbedError("22nd column 'calcMassToCharge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               } else {
                 try {
@@ -1058,19 +1027,13 @@ public class Validator {
                   logProbedError("22nd column 'calcMassToCharge' field cannot be case to a Double. Line content: " + s, errorMessages);
                 }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[22]) || !fields[22].matches("\\d+.*")) {
+              if (!validProbedFieldNullable(fields[22], false) || !validProbedFieldInteger(fields[22])) {
                 logProbedError("23rd column 'psmRank' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              } else {
-                try {
-                  int psmRank = Integer.parseInt(fields[22]);
-                } catch (NumberFormatException nfe) {
-                  logProbedError("23rd column 'psmRank' field cannot be case to an Integer. Line content: " + s, errorMessages);
-                }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[23])) {
+              if (!validProbedFieldNullable(fields[23], false) && !validProbedFieldString(fields[23])) {
                 logProbedError("24th column 'datasetID' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[24])) {
+              if (!validProbedFieldNullable(fields[24], false) && !validProbedFieldString(fields[24])) {
                 logProbedError("25th column 'uri' field must not be empty. Line content: " + s, errorMessages);
               }
             }
@@ -1079,7 +1042,7 @@ public class Validator {
       });
       if (errorMessages.size()>0) {
         StringBuffer errorsReported = new StringBuffer();
-        errorMessages.stream().limit(100).forEach(s -> errorsReported.append(s + "\n"));
+        errorMessages.parallelStream().limit(100).forEach(s -> errorsReported.append(s + "\n"));
         report.setStatus("ERROR: " + errorMessages.size() + " problems encountered. See below for (up to) the first 100 reported errors : \n" + errorsReported);
       } else {
         report.setStatusOK();
@@ -1131,5 +1094,71 @@ public class Validator {
     } catch (Exception e) {
       log.error("Error trying to write to report file: " + reportFile.getPath());
     }
+  }
+
+  /**
+   * This method checks if a field is allowed to be null or not.
+   * @param field the field to check.
+   * @param nullable if the field is allowed to be null.
+   * @return
+   */
+  private static boolean validProbedFieldNullable(String field, boolean nullable) {
+    return field!=null || nullable;
+  }
+
+  /**
+   * This method checks if a field is a non-empty String.
+   * @param field the field to check.
+   * @return
+   */
+  private static boolean validProbedFieldString(String field) {
+    return (!org.apache.commons.lang3.StringUtils.isEmpty(field));
+  }
+
+  /**
+   * This method checks if a field is an integer.
+   * @param field the field to check.
+   * @return
+   */
+  private static boolean validProbedFieldInteger(String field) {
+    boolean result = true;
+    if (org.apache.commons.lang3.StringUtils.isEmpty(field) || !field.matches(".*\\d+.*")) {
+      result = false;
+    } else {
+      try {
+        int integer = Integer.parseInt(field);
+      } catch (NumberFormatException nfe) {
+        log.error("Unable to case field to an integer.");
+        result = false;
+      }
+    }
+    return result;
+  }
+  /**
+   * This method checks if a field is a double.
+   * @param field the field to check.
+   * @return
+   */
+  private static boolean validProbedFieldDouble(String field) {
+    boolean result = true;
+    if (org.apache.commons.lang3.StringUtils.isEmpty(field) || !field.matches(".*\\d+.*")) {
+      result = false;
+    } else {
+      try {
+        double doubleNumber = Double.parseDouble(field);
+      } catch (NumberFormatException nfe) {
+        log.error("unable to case field to a double.");
+        result = false;
+      }
+    }
+    return result;
+  }
+  /**
+   * This method checks if a field is a character.
+   * @param field the field to check.
+   * @return
+   */
+  private static boolean validProbedFieldCharacter(String field) {
+    return field.length()==1;
   }
 }
