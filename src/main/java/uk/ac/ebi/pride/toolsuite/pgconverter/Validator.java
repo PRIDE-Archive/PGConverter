@@ -1148,7 +1148,7 @@ public class Validator {
       try {
         double doubleNumber = Double.parseDouble(field);
       } catch (NumberFormatException nfe) {
-        log.error("unable to case field to a double.");
+        log.error("Unable to cast field to a double.");
         result = false;
       }
     }
