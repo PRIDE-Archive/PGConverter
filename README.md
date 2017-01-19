@@ -16,7 +16,7 @@ Primarily this tool is powered by the [ms-data-core-api](https://github.com/PRID
 * 2+ GB RAM for complex mzIdentML files.
 
 ## Instructions
-1. [Download](https://drive.google.com/open?id=0ByPwkIg-BdVzc1lQNHNCMlRaVTQ) the tool as a zip archive file.
+1. [Download](https://drive.google.com/open?id=0ByPwkIg-BdVzVHlOajV4UzQzXzA) the tool as a zip archive file.
 2. Extract the zip file to a directory.
 3. From a terminal / command prompt, navigate to this new extracted directory and execute a command as described under the 'usage' section below.
 
