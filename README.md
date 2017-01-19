@@ -52,6 +52,12 @@ To perform XML schema validation on mzIdentML or PRIDE XML files, add the -schem
 $ java -jar pg-converter.jar -v -mzid /path/to/data/foo.mzid -peak /path/to/data/bar1.mgf -scehma -skipserialization -reportfile /path/to/output/outputReport.txt
 #### PRIDE XML schema validation only, without normal validation
 $ java -jar pg-converter.jar -v -pridexml /path/to/data/foo.pride.xml -schemaonly -skipserialization -reportfile /path/to/output/outputReport.txt
+## proBed validation
+proBed validation is also supported, by using the default proBed ASQL (.as) schema, or by using the -asqlfile parameter.
+## proBed validation - default schema
+$ java -jar pg-converter.jar -v -proBed /path/to/data/foo.pro.bed -reportfile /path/to/output/outputReport.txt
+## proBed validation - custom schema
+$ java -jar pg-converter.jar -v -proBed /path/to/data/foo.pro.bed -asqlfile /path/to/data/foo.as -reportfile /path/to/output/outputReport.txt
 ## Troubleshooting
 ### Java memory usage
 You may need to allocate more RAM for the tool to use. To do so, add an extra parameter at the start of the command along the lines of: -Xmx\<heap size\>g
