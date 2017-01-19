@@ -867,13 +867,14 @@ public class Validator {
    * @param columnFormat the BED column format, e.g the default BED12+13.
    * @param reportFile the file to save the output to.
    */
-  private static void validateProBed(File proBed, String columnFormat, File reportFile) {
+  private static void validateProBed(File proBed, String columnFormat, File reportFile, File asqlFile) {
     log.info("Validation proBed file: " + proBed.getPath() + " using column format: " + columnFormat);
     Report report = new Report();
     report.setFileName(proBed.getPath());
     Set<String> errorMessages = new HashSet<>();
     int defaultBedColumnCount = Integer.parseInt(columnFormat.substring(columnFormat.indexOf("D")+1, columnFormat.indexOf('+')));
     int proBedOptionalColumnsCount = Integer.parseInt(columnFormat.substring(columnFormat.indexOf("+")+1));
+    List<AsqlTriple> asqlTriples = (asqlFile!=null ? extractDatatypesAsql(asqlFile) : null);
     try (Stream<String> stream = Files.lines(proBed.toPath())) {
       Set<String> uniqueNames = ConcurrentHashMap.newKeySet();
       stream.parallel().forEach(s -> {
@@ -888,13 +889,13 @@ public class Validator {
               final int TOTAL_COLUMNS = defaultBedColumnCount+proBedOptionalColumnsCount;
               logProbedError("Incorrect number of columns found. Expected " + TOTAL_COLUMNS + " instead have : " + fields.length + ". Line content: " + s, errorMessages);
             } else {
-              if (!validProbedFieldNullable(fields[0], false) && !validProbedFieldString(fields[0])) {
+              if (!validateAsqlTriple(asqlTriples.get(0), fields[0])) {
                 logProbedError("1st column 'chrom' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[1], false) || !validProbedFieldInteger(fields[1])) {
+              if (!validateAsqlTriple(asqlTriples.get(1), fields[1])) {
                 logProbedError("2nd column 'chromStart' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[2], false) || !validProbedFieldInteger(fields[2])) {
+              if (!validateAsqlTriple(asqlTriples.get(2), fields[2])) {
                 logProbedError("3rd column 'chromEnd' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               } else {
                 int chromStart = Integer.parseInt(fields[1]);
@@ -904,7 +905,7 @@ public class Validator {
                 }
               }
               String name = fields[3];
-              if (!validProbedFieldNullable(name, false) && !validProbedFieldString(name)) {
+              if (!validateAsqlTriple(asqlTriples.get(3), fields[3])) {
                 logProbedError("4th column 'name' field must not be empty. Line content: " + s, errorMessages);
               } else {
                 if (uniqueNames.contains(name)) {
@@ -913,7 +914,7 @@ public class Validator {
                   uniqueNames.add(name);
                 }
               }
-              if (!validProbedFieldNullable(fields[4], false) || !validProbedFieldInteger(fields[4])) {
+              if (!validateAsqlTriple(asqlTriples.get(4), fields[4])) {
                 logProbedError("5th column 'score' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               } else {
                 int score = Integer.parseInt(fields[4]);
@@ -921,13 +922,13 @@ public class Validator {
                   logProbedError("5th column 'score' field must be between 0 - 1000 inclusive. Line content: " + s, errorMessages);
                 }
               }
-              if (!validProbedFieldNullable(fields[5], false) || !validProbedFieldCharacter(fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
+              if (!validateAsqlTriple(asqlTriples.get(5), fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
                 logProbedError("6th column 'strand' field must not be empty and must be either '-' or '+'. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[6], false) || !validProbedFieldInteger(fields[6])) {
+              if (!validateAsqlTriple(asqlTriples.get(6), fields[6])) {
                 logProbedError("7th column 'thickStart' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[7], false) || !validProbedFieldInteger(fields[7])) {
+              if (!validateAsqlTriple(asqlTriples.get(7), fields[7])) {
                 logProbedError("8th column 'thickEnd' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
               int thickStart = Integer.parseInt(fields[6]);
@@ -935,14 +936,14 @@ public class Validator {
               if (thickEnd<thickStart) {
                 logProbedError("7th and 8th columns 'thickStart' and 'thickEnd' fields must be in ascending order. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[8]) || (!fields[8].equals("0"))) {
+              if (!validateAsqlTriple(asqlTriples.get(8), fields[8]) || (!fields[8].equals("0"))) {
                 logProbedError("9th column 'reserved' field must not be empty and must be  '0'. Line contnent: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[9]) || !fields[9].matches("\\d+")) {
+              if (!validateAsqlTriple(asqlTriples.get(9), fields[9])) {
                 logProbedError("10th column 'blockCount' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
               int blockCount = Integer.parseInt(fields[9]);
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[10])) {
+              if (!validateAsqlTriple(asqlTriples.get(10), fields[10])) {
                 logProbedError("11th column 'blockSizes' field must not be empty. Line content: " + s, errorMessages);
               } else {
                 String blockSizes = fields[10];
@@ -956,7 +957,7 @@ public class Validator {
                   }
                 }
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[11])) {
+              if (!validateAsqlTriple(asqlTriples.get(11), fields[11])) {
                 logProbedError("12th column 'chromStarts' field must not be empty. Line content: " + s, errorMessages);
               } else {
                 String chromStarts = fields[11];
@@ -970,13 +971,13 @@ public class Validator {
                   }
                 }
               }
-              if (!validProbedFieldNullable(fields[12], false) && !validProbedFieldString(fields[12])) {
+              if (!validateAsqlTriple(asqlTriples.get(12), fields[12])) {
                 logProbedError("13th column 'proteinAccession' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[13], false) && !validProbedFieldString(fields[13])) {
+              if (!validateAsqlTriple(asqlTriples.get(13), fields[13])) {
                 logProbedError("14th column 'peptideSequence' field must not be empty and must contain at least one letter. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[14], false) && !validProbedFieldString(fields[14]) ||
+              if (!validateAsqlTriple(asqlTriples.get(14), fields[14]) ||
                   (!fields[14].equals("unique") &&
                       !fields[14].equals("not-unique[same-set]") &&
                       !fields[14].equals("not-unique[subset]") &&
@@ -985,19 +986,19 @@ public class Validator {
                 logProbedError("15th column 'uniqueness' field must not be empty and must be either: 1. not-unique[same-set], " +
                     "2. not-unique[subset], 3. not-unique[conflict], or 4. not-unique[unknown]. Line content: " + s, errorMessages);
               }
-              if (org.apache.commons.lang3.StringUtils.isEmpty(fields[15])) {
+              if (!validateAsqlTriple(asqlTriples.get(15), fields[15])) {
                 logProbedError("16th column 'genomeRefVersion' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[16], false) || !validProbedFieldDouble(fields[16])) {
+              if (!validateAsqlTriple(asqlTriples.get(16), fields[16])) {
                 logProbedError("17th column 'psmScore' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[17], false) || !validProbedFieldDouble(fields[17])) {
+              if (!validateAsqlTriple(asqlTriples.get(17), fields[17])) {
                 logProbedError("18th column 'fdr' field must not be empty. Line content: " + s, errorMessages);
               }
-              String modifications = fields[18];
-              if (!validProbedFieldNullable(modifications, false) && !validProbedFieldString(modifications)) {
+              if (!validateAsqlTriple(asqlTriples.get(18), fields[18])) {
                 logProbedError("19th column 'modifications' field must not be empty. Line content: " + s, errorMessages);
               } else {
+                String modifications = fields[18];
                 if (!modifications.equals(".")) {
                   String[] modificationsArray = modifications.split(",");
                   if (modificationsArray.length<1) {
@@ -1012,28 +1013,22 @@ public class Validator {
                   }
                 }
               }
-              if (!validProbedFieldNullable(fields[19], false) || !validProbedFieldInteger(fields[19])) {
+              if (!validateAsqlTriple(asqlTriples.get(19), fields[19])) {
                 logProbedError("20th column 'charge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[20], false) || !validProbedFieldDouble(fields[20])) {
+              if (!validateAsqlTriple(asqlTriples.get(20), fields[20])) {
                 logProbedError("21st column 'expMassToCharge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[21], false) || !validProbedFieldDouble(fields[21])) {
+              if (!validateAsqlTriple(asqlTriples.get(21), fields[21])) {
                 logProbedError("22nd column 'calcMassToCharge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              } else {
-                try {
-                  double calcMassToCharge = Double.parseDouble(fields[21]);
-                } catch (NumberFormatException nfe) {
-                  logProbedError("22nd column 'calcMassToCharge' field cannot be case to a Double. Line content: " + s, errorMessages);
-                }
               }
-              if (!validProbedFieldNullable(fields[22], false) || !validProbedFieldInteger(fields[22])) {
+              if (!validateAsqlTriple(asqlTriples.get(22), fields[22])) {
                 logProbedError("23rd column 'psmRank' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[23], false) && !validProbedFieldString(fields[23])) {
+              if (!validateAsqlTriple(asqlTriples.get(23), fields[23])) {
                 logProbedError("24th column 'datasetID' field must not be empty. Line content: " + s, errorMessages);
               }
-              if (!validProbedFieldNullable(fields[24], false) && !validProbedFieldString(fields[24])) {
+              if (!validateAsqlTriple(asqlTriples.get(24), fields[24])) {
                 logProbedError("25th column 'uri' field must not be empty. Line content: " + s, errorMessages);
               }
             }
@@ -1070,7 +1065,21 @@ public class Validator {
     File proBed = new File(cmd.getOptionValue(ARG_PROBED));
     String COLUMN_FORMAT = cmd.hasOption(ARG_BED_COLUMN_FORMAT) ? cmd.getOptionValue(ARG_BED_COLUMN_FORMAT) : "BED12+13";
     File REPORT_FILE = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
-    validateProBed(proBed, COLUMN_FORMAT, REPORT_FILE);
+    File ASQL_FILE = null;
+    if (cmd.hasOption(ARG_ASQLFILE)) {
+      new File(cmd.getOptionValue(ARG_ASQLFILE));
+    } else {
+      URL url = Validator.class.getClassLoader().getResource("probed-1.0.0.as");
+      if (url == null) {
+        log.error("Unable to read default proBed ASQL schema file!");
+      }
+      try {
+        ASQL_FILE = new File(url.toURI());
+      } catch (URISyntaxException e) {
+        log.error("Unable to read default proBed ASQL schema file!", e);
+      }
+    }
+    validateProBed(proBed, COLUMN_FORMAT, REPORT_FILE, ASQL_FILE);
   }
 
   /**
@@ -1103,7 +1112,7 @@ public class Validator {
    * @return
    */
   private static boolean validProbedFieldNullable(String field, boolean nullable) {
-    return field!=null || nullable;
+    return (field!=null && !field.equalsIgnoreCase(".")) || nullable;
   }
 
   /**
@@ -1131,6 +1140,20 @@ public class Validator {
         log.error("Unable to case field to an integer.");
         result = false;
       }
+    }
+    return result;
+  }
+  /**
+   * This method checks if a field is an unsigned integer.
+   * @param field the field to check.
+   * @return
+   */
+  private static boolean validProbedFieldUnsignedInteger(String field) {
+    boolean result = true;
+    if (org.apache.commons.lang3.StringUtils.isEmpty(field) || !field.matches(".*\\d+.*") || field.contains("-")) {
+      result = false;
+    } else {
+      result = validProbedFieldInteger(field);
     }
     return result;
   }
@@ -1162,5 +1185,160 @@ public class Validator {
    */
   private static boolean validProbedFieldCharacter(String field) {
     return field.length()==1;
+  }
+
+  /**
+   * This method extracts all the data type information from an ASQL file.
+   * @param asqlFile The input .as file.
+   * @return A List of AsqlTriple objects of BED field information, in the order they were specified in the .as file.
+   */
+  private static List<AsqlTriple> extractDatatypesAsql(File asqlFile) {
+    List<AsqlTriple> result = new ArrayList<>();
+    try {
+      List<String> lines = Files.readAllLines(asqlFile.toPath());
+      String line;
+      AsqlDataType asqlDataType = null;
+      String asqlName;
+      String asqlDesc;
+        if (lines.size()>4) {
+          for (int i=3; i<lines.size()-1; i++) {
+            line = lines.get(i);
+            line = line.replace(";", "");
+            String[] parts = line.split("  ", 3);
+            if (parts.length==3) {
+              for (AsqlDataType asqlDataTypeToCheck : AsqlDataType.values()) {
+                if (asqlDataTypeToCheck.toString().equals(parts[0])) {
+                  asqlDataType = asqlDataTypeToCheck;
+                  break;
+                }
+              }
+              if (asqlDataType==null) {
+                log.error("ASQL data type has not been set! " + line);
+              }
+              asqlName = parts[1];
+              asqlDesc = parts[2];
+              result.add(new AsqlTriple(asqlDataType, asqlName, asqlDesc));
+            } else {
+              log.error("aSQL has a line without 3 parts to it, unable to parse properly: " + asqlFile.getPath() + "\n" + lines.get(i));
+            }
+          }
+        } else {
+          log.error("aSQL is too short, unable to parse properly: " + asqlFile.getPath());
+        }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return result;
+  }
+
+  /**
+   * This method validates a field's value according to the AsqlTriple information for the data type.
+   * @param asqlTriple the information about the data type.
+   * @param value the value to be checked.
+   * @return true if the value is OK, false otherwise.
+   */
+  private static boolean validateAsqlTriple(AsqlTriple asqlTriple, String value) {
+    boolean result = false;
+    switch (asqlTriple.getAsqlDataType()) {
+      case STRING:
+        result = validProbedFieldString(value);
+        break;
+      case INT:
+        result = validProbedFieldInteger(value);
+        //
+        break;
+      case UINT:
+        result = validProbedFieldUnsignedInteger(value);
+        break;
+      case CHAR_ONE:
+        result = validProbedFieldCharacter(value);
+        break;
+      case INT_BLOCKCOUNT:
+        result = validProbedFieldString(value); // needs to be validated in relation to the 'blockcount' field's value
+        break;
+      case DOUBLE:
+        result = validProbedFieldDouble(value);
+        break;
+        default:
+          log.error("Unrecognized ASQL data type: " + asqlTriple.getAsqlDataType());
+    }
+    return result;
+  }
+}
+
+/**
+ * Class to store the ASQL schema datatype information about fields.
+ */
+class AsqlTriple {
+  private AsqlDataType asqlDataType;
+  private String asqlName;
+  private String asqlDesc;
+
+  /**
+   * Default constructor.
+   */
+  AsqlTriple() {
+  }
+
+  /**
+   * Constructor with all the supplied variables to hold BED data type information.
+   *
+   * @param asqlDataType the field's data type
+   * @param asqlName the field's name
+   * @param asqlDesc the field's description
+   */
+  AsqlTriple(AsqlDataType asqlDataType, String asqlName, String asqlDesc) {
+    this.asqlDataType = asqlDataType;
+    this.asqlName = asqlName;
+    this.asqlDesc = asqlDesc;
+  }
+
+  /**
+   * Gets the data type.
+   * @return the data type.
+   */
+  public AsqlDataType getAsqlDataType() {
+    return asqlDataType;
+  }
+
+  /**
+   * Sets the data type.
+   * @param asqlDataType the data type.
+   */
+  public void setAsqlDataType(AsqlDataType asqlDataType) {
+    this.asqlDataType = asqlDataType;
+  }
+
+  /**
+   * Gets the name.
+   * @return the name.
+   */
+  public String getAsqlName() {
+    return asqlName;
+  }
+
+  /**
+   * Sets the name.
+   * @param asqlName the name.
+   */
+  public void setAsqlName(String asqlName) {
+    this.asqlName = asqlName;
+  }
+
+  /**
+   * Gets the description.
+   * @return the description.
+   */
+  public String getAsqlDesc() {
+    return asqlDesc;
+  }
+
+  /**
+   * Sets the description.
+   * @param asqlDesc the description.
+   */
+  public void setAsqlDesc(String asqlDesc) {
+    this.asqlDesc = asqlDesc;
   }
 }

@@ -66,6 +66,20 @@ public class Utility {
     }
   }
 
+  /** The supported BED Data types in an ASQL file
+   */
+  public enum AsqlDataType {STRING("string"), INT("int"), UINT("uint"), CHAR_ONE("char[1]"), INT_BLOCKCOUNT("int[blockCount]"), DOUBLE("double");
+    private String format;
+
+    AsqlDataType(String format) {
+      this.format = format;
+    }
+
+    public String toString() {
+      return format;
+    }
+  }
+
   /**
    * Handles exiting from the tool, and potentially messages REDIS if set.
    * @param cmd command line arguments.
