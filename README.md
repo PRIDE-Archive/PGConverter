@@ -37,7 +37,7 @@ $ java -jar pg-converter.jar -c -mztab /path/to/data/foo.pro.bed -chromsizes /pa
 
 NB *bigBed conversion requires the input proBed file to be sorted by the first 3 columns, and chromosomes without provided sizes need to be filtered out.
 
-## File validation
+## Assay 'result' file validation
 To validate, run the tool with the -v parameter, and the provide your 'result' assay files, and related 'peak' files if applicable. Peak files can be added with the -peak parameter for a single peak file, or -peaks with paths separated by '##' for multiple related peak files.
 By default the report is saved as a serilized object, so to make a human-readiable plain text report use the -skipserialization flag, and provide an output report file to save the output.
 ### mzIdentML validation
@@ -54,9 +54,9 @@ $ java -jar pg-converter.jar -v -mzid /path/to/data/foo.mzid -peak /path/to/data
 $ java -jar pg-converter.jar -v -pridexml /path/to/data/foo.pride.xml -schemaonly -skipserialization -reportfile /path/to/output/outputReport.txt
 ## proBed validation
 proBed validation is also supported, by using the default proBed ASQL (.as) schema, or by using the -asqlfile parameter.
-## proBed validation - default schema
+### proBed validation - default schema
 $ java -jar pg-converter.jar -v -proBed /path/to/data/foo.pro.bed -reportfile /path/to/output/outputReport.txt
-## proBed validation - custom schema
+### proBed validation - custom schema
 $ java -jar pg-converter.jar -v -proBed /path/to/data/foo.pro.bed -asqlfile /path/to/data/foo.as -reportfile /path/to/output/outputReport.txt
 ## Troubleshooting
 ### Java memory usage
