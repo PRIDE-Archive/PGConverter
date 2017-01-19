@@ -37,21 +37,27 @@ $ java -jar pg-converter.jar -c -mztab /path/to/data/foo.pro.bed -chromsizes /pa
 
 NB *bigBed conversion requires the input proBed file to be sorted by the first 3 columns, and chromosomes without provided sizes need to be filtered out.
 
-## File validation
+### Assay 'result' file validation
 To validate, run the tool with the -v parameter, and the provide your 'result' assay files, and related 'peak' files if applicable. Peak files can be added with the -peak parameter for a single peak file, or -peaks with paths separated by '##' for multiple related peak files.
 By default the report is saved as a serilized object, so to make a human-readiable plain text report use the -skipserialization flag, and provide an output report file to save the output.
-### mzIdentML validation
+#### mzIdentML validation
 $ java -jar pg-converter.jar -v -mzid /path/to/data/foo.mzid -peak /path/to/data/bar1.mgf -skipserialization -reportfile /path/to/output/outputReport.txt
-### mzTab validation
+#### mzTab validation
 $ java -jar pg-converter.jar -v -mztab /path/to/data/foo.mzid -peaks /path/to/data/bar1.mgf##/path/to/data/bar2.mgf -skipserialization -reportfile /path/to/output/outputReport.txt
-### PRIDE XML validation
+#### PRIDE XML validation
 $ java -jar pg-converter.jar -v -pridexml /path/to/data/foo.pride.xml -skipserialization -reportfile /path/to/output/outputReport.txt
-### XML schema validation
+#### XML schema validation
 To perform XML schema validation on mzIdentML or PRIDE XML files, add the -schema or -schemaonly parameter. -schema will include schema validation before the "normal" validation, and -schemaonly will stop after the schema validation has finished (no "normal" validation).
-#### mzIdentML schema validation and normal validation
+##### mzIdentML schema validation and normal validation
 $ java -jar pg-converter.jar -v -mzid /path/to/data/foo.mzid -peak /path/to/data/bar1.mgf -scehma -skipserialization -reportfile /path/to/output/outputReport.txt
-#### PRIDE XML schema validation only, without normal validation
+##### PRIDE XML schema validation only, without normal validation
 $ java -jar pg-converter.jar -v -pridexml /path/to/data/foo.pride.xml -schemaonly -skipserialization -reportfile /path/to/output/outputReport.txt
+### proBed validation
+proBed validation is also supported, by using the default proBed ASQL (.as) schema, or by using the -asqlfile parameter.
+#### proBed validation - default schema
+$ java -jar pg-converter.jar -v -proBed /path/to/data/foo.pro.bed -reportfile /path/to/output/outputReport.txt
+#### proBed validation - custom schema
+$ java -jar pg-converter.jar -v -proBed /path/to/data/foo.pro.bed -asqlfile /path/to/data/foo.as -reportfile /path/to/output/outputReport.txt
 ## Troubleshooting
 ### Java memory usage
 You may need to allocate more RAM for the tool to use. To do so, add an extra parameter at the start of the command along the lines of: -Xmx\<heap size\>g

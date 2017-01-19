@@ -78,6 +78,7 @@ public class MainApp {
     options.addOption(ARG_SKIP_SERIALIZATION, false, "Redis message");
     options.addOption(ARG_SCHEMA_VALIDATION, false, "XML Schema validation");
     options.addOption(ARG_SCHEMA_ONLY_VALIDATION, false, "XML Schema-only validation");
+    options.addOption(ARG_BED_COLUMN_FORMAT, true, "BED column format");
     CommandLineParser parser = new DefaultParser();
     return parser.parse(options, args);
   }

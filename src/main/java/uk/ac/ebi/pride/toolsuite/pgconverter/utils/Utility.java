@@ -48,6 +48,8 @@ public class Utility {
   public static final String MS_INSTRUMENT_MODEL_NAME = "instrument model";
   public static final String ARG_SCHEMA_VALIDATION = "schema";
   public static final String ARG_SCHEMA_ONLY_VALIDATION = "schemaonly";
+  public static final String ARG_BED_COLUMN_FORMAT = "columnformat";
+
 
   /**
    * The supported file types.
@@ -61,6 +63,20 @@ public class Utility {
 
     public String toString() {
         return format;
+    }
+  }
+
+  /** The supported BED Data types in an ASQL file
+   */
+  public enum AsqlDataType {STRING("string"), INT("int"), UINT("uint"), CHAR_ONE("char[1]"), INT_BLOCKCOUNT("int[blockCount]"), DOUBLE("double");
+    private String format;
+
+    AsqlDataType(String format) {
+      this.format = format;
+    }
+
+    public String toString() {
+      return format;
     }
   }
 
