@@ -78,4 +78,4 @@ bigBed conversion requires extra supporting files. For further information pleas
 In particular, the UCSC bedToBigBed converter tool is only available for linux and Mac (OSX), not Windows.
 
 ## Contact
-To get in touch, please either email <pride-support@ebi.ac.uk> or raise an issue onn the [issues page](https://github.com/PRIDE-Toolsuite/PGConverter/issues).
+To get in touch, please either email <pride-support@ebi.ac.uk> or raise an issue on the [issues page](https://github.com/PRIDE-Toolsuite/PGConverter/issues).
