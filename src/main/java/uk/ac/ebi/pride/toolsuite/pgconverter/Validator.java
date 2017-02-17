@@ -52,6 +52,8 @@ public class Validator {
   private static final String PRIDE_XML_SCHEMA = "http://ftp.pride.ebi.ac.uk/pride/resources/schema/pride/pride.xsd";
   private static final String MZID_SCHEMA = "http://www.psidev.info/sites/default/files/mzIdentML1.1.0.xsd";
   public static final String SCHEMA_OK_MESSAGE = "XML schema validation OK on: ";
+  private static final String LINE_CONTENT = " Line content: ";
+  private static final String FIELD_UNSIGNED_INTEGER = "field must not be empty and must be an unsigned integer containing at least one digit.";
 
   /**
    * This class parses the command line arguments and beings the file validation.
@@ -438,8 +440,7 @@ public class Validator {
   private static void scanForInstrument(DataAccessController dataAccessController, AssayFileSummary assayFileSummary) {
     log.info("Started scanning for instruments");
     Set<Instrument> instruments = new HashSet<>();
-    //check to see if we have instrument configurations in the result file to scan
-    //this isn't always present
+    //check to see if we have instrument configurations in the result file to scan, this isn't always present
     MzGraphMetaData mzGraphMetaData = null;
     try {
       mzGraphMetaData = dataAccessController.getMzGraphMetaData();
@@ -878,164 +879,7 @@ public class Validator {
     List<AsqlTriple> asqlTriples = (asqlFile!=null ? extractDatatypesAsql(asqlFile) : null);
     try (Stream<String> stream = Files.lines(proBed.toPath())) {
       Set<String> uniqueNames = ConcurrentHashMap.newKeySet();
-      stream.parallel().forEach(s -> {
-        if (org.apache.commons.lang3.StringUtils.isEmpty(s)) {
-          logProbedError("Empty blank line encountered", errorMessages);
-        } else {
-          if (s.charAt(0)=='#') {
-            log.info("Comment: " + s);
-          } else {
-            String[] fields = s.split("\\t");
-            if (fields.length!=(defaultBedColumnCount+proBedOptionalColumnsCount)) {
-              final int TOTAL_COLUMNS = defaultBedColumnCount+proBedOptionalColumnsCount;
-              logProbedError("Incorrect number of columns found. Expected " + TOTAL_COLUMNS + " instead have : " + fields.length + ". Line content: " + s, errorMessages);
-            } else {
-              if (!validateAsqlTriple(asqlTriples.get(0), fields[0])) {
-                logProbedError("1st column 'chrom' field must not be empty. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(1), fields[1])) {
-                logProbedError("2nd column 'chromStart' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(2), fields[2])) {
-                logProbedError("3rd column 'chromEnd' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              } else {
-                int chromStart = Integer.parseInt(fields[1]);
-                int chromEnd = Integer.parseInt(fields[2]);
-                if (chromEnd<chromStart) {
-                  logProbedError("2nd and 3rd columns 'chromStart' and 'chromEnd' fields must be in ascending order. Line content: " + s, errorMessages);
-                }
-              }
-              String name = fields[3];
-              if (!validateAsqlTriple(asqlTriples.get(3), fields[3])) {
-                logProbedError("4th column 'name' field must not be empty. Line content: " + s, errorMessages);
-              } else {
-                if (uniqueNames.contains(name)) {
-                  logProbedError("4th column 'name' field must be unique. Line content: " + s, errorMessages);
-                } else {
-                  uniqueNames.add(name);
-                }
-              }
-              if (!validateAsqlTriple(asqlTriples.get(4), fields[4])) {
-                logProbedError("5th column 'score' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              } else {
-                int score = Integer.parseInt(fields[4]);
-                if (score<0 || score >1000) {
-                  logProbedError("5th column 'score' field must be between 0 - 1000 inclusive. Line content: " + s, errorMessages);
-                }
-              }
-              if (!validateAsqlTriple(asqlTriples.get(5), fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
-                logProbedError("6th column 'strand' field must not be empty and must be either '-' or '+'. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(6), fields[6])) {
-                logProbedError("7th column 'thickStart' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(7), fields[7])) {
-                logProbedError("8th column 'thickEnd' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              int thickStart = Integer.parseInt(fields[6]);
-              int thickEnd = Integer.parseInt(fields[7]);
-              if (thickEnd<thickStart) {
-                logProbedError("7th and 8th columns 'thickStart' and 'thickEnd' fields must be in ascending order. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(8), fields[8]) || (!fields[8].equals("0"))) {
-                logProbedError("9th column 'reserved' field must not be empty and must be  '0'. Line contnent: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(9), fields[9])) {
-                logProbedError("10th column 'blockCount' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              int blockCount = Integer.parseInt(fields[9]);
-              if (!validateAsqlTriple(asqlTriples.get(10), fields[10])) {
-                logProbedError("11th column 'blockSizes' field must not be empty. Line content: " + s, errorMessages);
-              } else {
-                String blockSizes = fields[10];
-                String[] blockSizesSplit = blockSizes.split(",");
-                if (blockSizesSplit.length!=blockCount) {
-                  logProbedError("11th column 'blockSizes' field does not have the same amount of blocks as mentioned in 'blockCount'. Line content: " + s, errorMessages);
-                }
-                for (String blockSizePart : blockSizesSplit) {
-                  if (org.apache.commons.lang3.StringUtils.isEmpty(blockSizePart) || !blockSizePart.matches("\\d+")) {
-                    logProbedError("11th column 'blockSizes' field must not be empty and must contain at least one digit, separated by commas. Line content: " + s, errorMessages);
-                  }
-                }
-              }
-              if (!validateAsqlTriple(asqlTriples.get(11), fields[11])) {
-                logProbedError("12th column 'chromStarts' field must not be empty. Line content: " + s, errorMessages);
-              } else {
-                String chromStarts = fields[11];
-                String[] chromStartsSplit = chromStarts.split(",");
-                if (chromStartsSplit.length!=blockCount) {
-                  logProbedError("12th column 'chromStarts' field does not have the same amount of blocks as mentioned in 'blockCount'. Line content: " + s, errorMessages);
-                }
-                for (String chromStartsPart : chromStartsSplit) {
-                  if (org.apache.commons.lang3.StringUtils.isEmpty(chromStartsPart) || !chromStartsPart.matches("\\d+")) {
-                    logProbedError("12th column 'chromStarts' field must not be empty and must contain at least one digit, separated by commas. Line content: " + s, errorMessages);
-                  }
-                }
-              }
-              if (!validateAsqlTriple(asqlTriples.get(12), fields[12])) {
-                logProbedError("13th column 'proteinAccession' field must not be empty. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(13), fields[13])) {
-                logProbedError("14th column 'peptideSequence' field must not be empty and must contain at least one letter. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(14), fields[14]) ||
-                  (!fields[14].equals("unique") &&
-                      !fields[14].equals("not-unique[same-set]") &&
-                      !fields[14].equals("not-unique[subset]") &&
-                      !fields[14].equals("not-unique[conflict]") &&
-                      !fields[14].equals("not-unique[unknown]"))) {
-                logProbedError("15th column 'uniqueness' field must not be empty and must be either: 1. not-unique[same-set], " +
-                    "2. not-unique[subset], 3. not-unique[conflict], or 4. not-unique[unknown]. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(15), fields[15])) {
-                logProbedError("16th column 'genomeRefVersion' field must not be empty. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(16), fields[16])) {
-                logProbedError("17th column 'psmScore' field must not be empty. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(17), fields[17])) {
-                logProbedError("18th column 'fdr' field must not be empty. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(18), fields[18])) {
-                logProbedError("19th column 'modifications' field must not be empty. Line content: " + s, errorMessages);
-              } else {
-                String modifications = fields[18];
-                if (!modifications.equals(".")) {
-                  String[] modificationsArray = modifications.split(",");
-                  if (modificationsArray.length<1) {
-                    logProbedError("19th column 'modifications' field must either be '.' for no modifications, or contain modifications of the format like '5-UNIMOD:4'. Line content: " + s, errorMessages);
-                  } else {
-                    for (String modification : modificationsArray) {
-                      modification = modification.trim();
-                      if (!modification.matches("\\d+-\\w+:\\d+")) {
-                        logProbedError("19th column 'modifications' field must either be '.' for no modifications, or contain modifications of the format like '5-UNIMOD:4'. Line content: " + s, errorMessages);
-                      }
-                    }
-                  }
-                }
-              }
-              if (!validateAsqlTriple(asqlTriples.get(19), fields[19])) {
-                logProbedError("20th column 'charge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(20), fields[20])) {
-                logProbedError("21st column 'expMassToCharge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(21), fields[21])) {
-                logProbedError("22nd column 'calcMassToCharge' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(22), fields[22])) {
-                logProbedError("23rd column 'psmRank' field must not be empty and must contain at least one digit. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(23), fields[23])) {
-                logProbedError("24th column 'datasetID' field must not be empty. Line content: " + s, errorMessages);
-              }
-              if (!validateAsqlTriple(asqlTriples.get(24), fields[24])) {
-                logProbedError("25th column 'uri' field must not be empty. Line content: " + s, errorMessages);
-              }
-            }
-          }
-        }
-      });
+      stream.parallel().forEach(s -> validateProbeLine(errorMessages, defaultBedColumnCount, proBedOptionalColumnsCount, asqlTriples, uniqueNames, s));
       if (errorMessages.size()>0) {
         StringBuffer errorsReported = new StringBuffer();
         errorMessages.parallelStream().limit(100).forEach(s -> errorsReported.append(s + "\n"));
@@ -1053,6 +897,174 @@ public class Validator {
       if (reportFile!=null) {
         report.setStatus(PROBED_IO_MESSAGE);
         writeProbedReport(report, reportFile);
+      }
+    }
+  }
+
+  /**
+   * This method validates a line of a proBed file.
+   * @param errorMessages a set of erro messages to record.
+   * @param defaultBedColumnCount the default BED column count.
+   * @param proBedOptionalColumnsCount the number of proBed extra columns.
+   * @param asqlTriples  the ASQL triples constructed from the .AS file.
+   * @param uniqueNames a running set of the unique names for the proBed file.
+   * @param proBedLine the proBed line to validate.
+   */
+  private static void validateProbeLine(Set<String> errorMessages, int defaultBedColumnCount, int proBedOptionalColumnsCount, List<AsqlTriple> asqlTriples, Set<String> uniqueNames, String proBedLine) {
+    if (org.apache.commons.lang3.StringUtils.isEmpty(proBedLine)) {
+      logProbedError("Empty blank line encountered", errorMessages);
+    } else {
+      if (proBedLine.charAt(0)=='#') {
+        log.info("Comment: " + proBedLine);
+      } else {
+        String[] fields = proBedLine.split("\\t");
+        if (fields.length!=(defaultBedColumnCount+proBedOptionalColumnsCount)) {
+          final int TOTAL_COLUMNS = defaultBedColumnCount+proBedOptionalColumnsCount;
+          logProbedError("Incorrect number of columns found. Expected " + TOTAL_COLUMNS + " instead have : " + fields.length + "." + LINE_CONTENT + proBedLine, errorMessages);
+        } else {
+          if (!validateAsqlTriple(asqlTriples.get(0), fields[0])) {
+            logProbedError("1st column 'chrom' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(1), fields[1])) {
+            logProbedError("2nd column 'chromStart' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(2), fields[2])) {
+            logProbedError("3rd column 'chromEnd' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
+          } else {
+            int chromStart = Integer.parseInt(fields[1]);
+            int chromEnd = Integer.parseInt(fields[2]);
+            if (chromEnd<chromStart) {
+              logProbedError("2nd and 3rd columns 'chromStart' and 'chromEnd' fields must be in ascending order." + LINE_CONTENT + proBedLine, errorMessages);
+            }
+          }
+          String name = fields[3];
+          if (!validateAsqlTriple(asqlTriples.get(3), fields[3])) {
+            logProbedError("4th column 'name' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          } else {
+            if (uniqueNames.contains(name)) {
+              logProbedError("4th column 'name' field must be unique." + LINE_CONTENT + proBedLine, errorMessages);
+            } else {
+              uniqueNames.add(name);
+            }
+          }
+          if (!validateAsqlTriple(asqlTriples.get(4), fields[4])) {
+            logProbedError("5th column 'score' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
+          } else {
+            int score = Integer.parseInt(fields[4]);
+            if (score<0 || score >1000) {
+              logProbedError("5th column 'score' field must be between 0 - 1000 inclusive." + LINE_CONTENT + proBedLine, errorMessages);
+            }
+          }
+          if (!validateAsqlTriple(asqlTriples.get(5), fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
+            logProbedError("6th column 'strand' field must not be empty and must be either '-' or '+'." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(6), fields[6])) {
+            logProbedError("7th column 'thickStart' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(7), fields[7])) {
+            logProbedError("8th column 'thickEnd' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          int thickStart = Integer.parseInt(fields[6]);
+          int thickEnd = Integer.parseInt(fields[7]);
+          if (thickEnd<thickStart) {
+            logProbedError("7th and 8th columns 'thickStart' and 'thickEnd' fields must be in ascending order." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(8), fields[8]) || (!fields[8].equals("0"))) {
+            logProbedError("9th column 'reserved' field must not be empty and must be '0'. Line contnent: " + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(9), fields[9])) {
+            logProbedError("10th column 'blockCount' field must be an integer contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          int blockCount = Integer.parseInt(fields[9]);
+          if (!validateAsqlTriple(asqlTriples.get(10), fields[10])) {
+            logProbedError("11th column 'blockSizes' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          } else {
+            String blockSizes = fields[10];
+            String[] blockSizesSplit = blockSizes.split(",");
+            if (blockSizesSplit.length!=blockCount) {
+              logProbedError("11th column 'blockSizes' field does not have the same amount of blocks as mentioned in 'blockCount'." + LINE_CONTENT + proBedLine, errorMessages);
+            }
+            for (String blockSizePart : blockSizesSplit) {
+              if (org.apache.commons.lang3.StringUtils.isEmpty(blockSizePart) || !blockSizePart.matches("\\d+")) {
+                logProbedError("11th column 'blockSizes' field must list at least one integer containing at least one digit, with multiple values separated by commas." + LINE_CONTENT + proBedLine, errorMessages);
+              }
+            }
+          }
+          if (!validateAsqlTriple(asqlTriples.get(11), fields[11])) {
+            logProbedError("12th column 'chromStarts' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          } else {
+            String chromStarts = fields[11];
+            String[] chromStartsSplit = chromStarts.split(",");
+            if (chromStartsSplit.length!=blockCount) {
+              logProbedError("12th column 'chromStarts' field does not have the same amount of blocks as mentioned in 'blockCount'." + LINE_CONTENT + proBedLine, errorMessages);
+            }
+            for (String chromStartsPart : chromStartsSplit) {
+              if (org.apache.commons.lang3.StringUtils.isEmpty(chromStartsPart) || !chromStartsPart.matches("\\d+")) {
+                logProbedError("12th column 'chromStarts' field must list at least one integer containing at least one digit, with multiple values separated by commas." + LINE_CONTENT + proBedLine, errorMessages);
+              }
+            }
+          }
+          if (!validateAsqlTriple(asqlTriples.get(12), fields[12])) {
+            logProbedError("13th column 'proteinAccession' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(13), fields[13])) {
+            logProbedError("14th column 'peptideSequence' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(14), fields[14]) ||
+              (!fields[14].equals("unique") &&
+                  !fields[14].equals("not-unique[same-set]") &&
+                  !fields[14].equals("not-unique[subset]") &&
+                  !fields[14].equals("not-unique[conflict]") &&
+                  !fields[14].equals("not-unique[unknown]"))) {
+            logProbedError("15th column 'uniqueness' field must not be empty and must be either: 1. not-unique[same-set], " +
+                "2. not-unique[subset], 3. not-unique[conflict], or 4. not-unique[unknown]." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(15), fields[15])) {
+            logProbedError("16th column 'genomeRefVersion' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(16), fields[16])) {
+            logProbedError("17th column 'psmScore' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(17), fields[17])) {
+            logProbedError("18th column 'fdr' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(18), fields[18])) {
+            logProbedError("19th column 'modifications' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          } else {
+            String modifications = fields[18];
+            if (!modifications.equals(".")) {
+              String[] modificationsArray = modifications.split(",");
+              if (modificationsArray.length<1) {
+                logProbedError("19th column 'modifications' field must either be '.' for no modifications, or contain modifications of the format like '5-UNIMOD:4'." + LINE_CONTENT + proBedLine, errorMessages);
+              } else {
+                for (String modification : modificationsArray) {
+                  modification = modification.trim();
+                  if (!modification.matches("\\d+-\\w+:\\d+")) {
+                    logProbedError("19th column 'modifications' field must either be '.' for no modifications, or contain modifications of the format like '5-UNIMOD:4'." + LINE_CONTENT + proBedLine, errorMessages);
+                  }
+                }
+              }
+            }
+          }
+          if (!validateAsqlTriple(asqlTriples.get(19), fields[19])) {
+            logProbedError("20th column 'charge' field must not be empty and must contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(20), fields[20])) {
+            logProbedError("21st column 'expMassToCharge' field must not be empty and must contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(21), fields[21])) {
+            logProbedError("22nd column 'calcMassToCharge' field must not be empty and must contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(22), fields[22])) {
+            logProbedError("23rd column 'psmRank' field must not be empty and must contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(23), fields[23])) {
+            logProbedError("24th column 'datasetID' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+          if (!validateAsqlTriple(asqlTriples.get(24), fields[24])) {
+            logProbedError("25th column 'uri' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
+          }
+        }
       }
     }
   }
@@ -1141,7 +1153,7 @@ public class Validator {
       try {
         int integer = Integer.parseInt(field);
       } catch (NumberFormatException nfe) {
-        log.error("Unable to cast field to an integer.");
+        log.error("Unable to cast field to an integer.", nfe);
         result = false;
       }
     }
@@ -1175,7 +1187,7 @@ public class Validator {
       try {
         double doubleNumber = Double.parseDouble(field);
       } catch (NumberFormatException nfe) {
-        log.error("Unable to cast field to a double.");
+        log.error("Unable to cast field to a double.", nfe);
         result = false;
       }
     }
@@ -1250,7 +1262,6 @@ public class Validator {
         break;
       case INT:
         result = validProbedFieldInteger(value);
-        //
         break;
       case UINT:
         result = validProbedFieldUnsignedInteger(value);
@@ -1259,7 +1270,7 @@ public class Validator {
         result = validProbedFieldCharacter(value);
         break;
       case INT_BLOCKCOUNT:
-        result = validProbedFieldString(value); // needs to be validated in relation to the 'blockcount' field's value
+        result = validProbedFieldString(value); // needs to be validated in relation to the 'blockcount' field's value, handled elsewhere
         break;
       case DOUBLE:
         result = validProbedFieldDouble(value);
