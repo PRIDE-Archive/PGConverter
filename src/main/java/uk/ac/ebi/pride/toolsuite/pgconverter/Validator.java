@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.toolsuite.pgconverter;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1074,8 +1075,11 @@ public class Validator {
         log.error("Unable to read default proBed ASQL schema file!");
       }
       try {
-        ASQL_FILE = new File(url.toURI());
-      } catch (URISyntaxException e) {
+        File tempAs = File.createTempFile("probed_default", ".as");
+        tempAs.deleteOnExit();
+        FileUtils.copyURLToFile(url, tempAs);
+        ASQL_FILE = tempAs;
+      } catch (IOException e) {
         log.error("Unable to read default proBed ASQL schema file!", e);
       }
     }
@@ -1137,7 +1141,7 @@ public class Validator {
       try {
         int integer = Integer.parseInt(field);
       } catch (NumberFormatException nfe) {
-        log.error("Unable to case field to an integer.");
+        log.error("Unable to cast field to an integer.");
         result = false;
       }
     }
