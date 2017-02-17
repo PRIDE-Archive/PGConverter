@@ -182,5 +182,4 @@ public class ValidatorTest {
     Validator.startValidation(MainApp.parseArgs(args));
     assertTrue("No errors reported during the validation of the mzTab file", reportStatus(reportFile));
   }
-  //TODO proBed validation?
 }
