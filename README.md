@@ -1,5 +1,5 @@
 # ProteoGenomics Converter tool (PGConverter)
-[Download PGConverter Latest: 1.3](https://drive.google.com/open?id=0ByPwkIg-BdVzc1lQNHNCMlRaVTQ)
+[Download PGConverter Latest: 1.4](https://drive.google.com/open?id=0ByPwkIg-BdVzdGZwazQtRnE0dDA)
 
 This library is primarily to offer a command-line tool to convert between the following formats for proteogenomics related data:
 mzIdentML -> mzTab -> proBed -> bigBed. For more information about proBed, see the [PSI proBed](http://www.psidev.info/probed) website. For more information about [BED](https://genome.ucsc.edu/FAQ/FAQformat.html#format1) and [bigBed](https://genome.ucsc.edu/goldenpath/help/bigBed.html), please see the UCSC website.
@@ -56,6 +56,8 @@ $ java -jar pg-converter.jar -v -pridexml /path/to/data/foo.pride.xml -schemaonl
 proBed validation is also supported, by using the default proBed ASQL (.as) schema, or by using the -asqlfile parameter.
 #### proBed validation - default schema
 $ java -jar pg-converter.jar -v -proBed /path/to/data/foo.pro.bed -reportfile /path/to/output/outputReport.txt
+</br>For a real example of proBed validation, please download the [unit test example](https://raw.githubusercontent.com/PRIDE-Toolsuite/PGConverter/master/src/test/resources/test.pro.bed) to a directory, and then run the PG-Converter tool using a command along the lines of:</br>
+$ java -jar pg-converter.jar -v -proBed /path/to/data/test.pro.bed
 #### proBed validation - custom schema
 $ java -jar pg-converter.jar -v -proBed /path/to/data/foo.pro.bed -asqlfile /path/to/data/foo.as -reportfile /path/to/output/outputReport.txt
 ## Troubleshooting
