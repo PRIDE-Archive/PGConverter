@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 
@@ -67,7 +66,7 @@ public class ValidatorTest {
     String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_SCHEMA_ONLY_VALIDATION, "-" + ARG_MZID, inputMzidFile.getPath(), "-" + ARG_PEAK, inputMgfFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
     Validator.startValidation(MainApp.parseArgs(args));
     assertTrue("No errors reported during the validation of the mzIdentML file", reportStatus(reportFile));
-    reportFile.delete();
+    reportFile.deleteOnExit();
 
     url = ConverterTest.class.getClassLoader().getResource("mzidentml-example-bad.mzid");
     if (url == null) {
