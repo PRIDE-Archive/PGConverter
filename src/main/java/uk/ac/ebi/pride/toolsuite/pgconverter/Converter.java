@@ -243,13 +243,15 @@ public class Converter {
       mzTabController.close();
       log.info("Finished processing " + outputFile.getAbsolutePath());
       File mzTabDirectory = inputFile.getParentFile();
-      File[] files = mzTabDirectory.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (file.getName().contains("pride.mztaberrors.out")) {
-            boolean deleted = file.delete();
-            log.info("Deleted file: " + deleted);
-            break;
+      if (mzTabDirectory!=null) {
+        File[] files = mzTabDirectory.listFiles();
+        if (files != null) {
+          for (File file : files) {
+            if (file.getName().contains("pride.mztaberrors.out")) {
+              boolean deleted = file.delete();
+              log.info("Deleted file: " + deleted);
+              break;
+            }
           }
         }
       }
