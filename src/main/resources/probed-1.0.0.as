@@ -1,5 +1,5 @@
 table proBed
-BED12+13 PSI proBed 1.0.0
+"BED12+13 PSI proBed 1.0.0"
 (
 string  chrom;  "Reference sequence chromosome"
 uint  chromStart;  "Start position of the first DNA base"
