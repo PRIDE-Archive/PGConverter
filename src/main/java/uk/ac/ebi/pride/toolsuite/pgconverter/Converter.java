@@ -9,10 +9,7 @@ import uk.ac.ebi.pride.jmztab.model.MZTabFile;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzIdentMLControllerImpl;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzTabControllerImpl;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.PrideXmlControllerImpl;
-import uk.ac.ebi.pride.utilities.data.exporters.AbstractMzTabConverter;
-import uk.ac.ebi.pride.utilities.data.exporters.MzIdentMLMzTabConverter;
-import uk.ac.ebi.pride.utilities.data.exporters.MzTabBedConverter;
-import uk.ac.ebi.pride.utilities.data.exporters.PRIDEMzTabConverter;
+import uk.ac.ebi.pride.utilities.data.exporters.*;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -199,7 +196,7 @@ public class Converter {
       AbstractMzTabConverter mzTabconverter = null;
       if (inputFormat.equals(FileType.MZID.toString())) {
         MzIdentMLControllerImpl mzIdentMLController = new MzIdentMLControllerImpl(inputFile);
-        mzTabconverter = new MzIdentMLMzTabConverter(mzIdentMLController);
+        mzTabconverter = new HQMzIdentMLMzTabConverter(mzIdentMLController);
       } else if (inputFormat.equals(FileType.PRIDEXML.toString())) {
         PrideXmlControllerImpl prideXmlController = new PrideXmlControllerImpl(inputFile);
         mzTabconverter = new PRIDEMzTabConverter(prideXmlController);
