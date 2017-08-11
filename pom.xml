@@ -4,7 +4,7 @@
     <groupId>uk.ac.ebi.pride.toolsuite</groupId>
     <artifactId>pg-converter</artifactId>
     <name>pg-converter</name>
-    <version>1.7</version>
+    <version>1.8-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
