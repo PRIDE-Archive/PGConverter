@@ -1,12 +1,12 @@
 import org.junit.Test;
-import uk.ac.ebi.pride.jmztab.utils.MZTabFileConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.toolsuite.pgconverter.Converter;
 import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzTabControllerImpl;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Collection;
 
 import static org.junit.Assert.assertTrue;
 import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
@@ -18,6 +18,7 @@ import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
  */
 
 public class ConverterTest {
+  private static final Logger logger = LoggerFactory.getLogger(ConverterTest.class);
 
   /**
    * This test converts an example mzIdentML file into an mzTab file.
