@@ -1,10 +1,12 @@
 import org.junit.Test;
+import uk.ac.ebi.pride.jmztab.utils.MZTabFileConverter;
 import uk.ac.ebi.pride.toolsuite.pgconverter.Converter;
 import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.MzTabControllerImpl;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Collection;
 
 import static org.junit.Assert.assertTrue;
 import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
@@ -33,6 +35,7 @@ public class ConverterTest {
     String[] args = new String[]{"-" + ARG_CONVERSION, "-" + ARG_INPUTFILE, inputMzidFile.getPath(), "-" + ARG_OUTPUTFILE, outputFile.getPath()};
     Converter.startConversion(MainApp.parseArgs(args));
     MzTabControllerImpl mzTabController = new MzTabControllerImpl(outputFile);
+    assertTrue("Total number of Protein IDs should be correct.", 797==mzTabController.getProteinIds().size());
     mzTabController.close();
     assertTrue("No errors reported during the conversion from  mzIdentML to MzTab", outputFile.exists());
   }
@@ -49,10 +52,11 @@ public class ConverterTest {
       throw new IllegalStateException("no file for input found!");
     }
     File inputPridexmlFile = new File(url.toURI());
-    File outputFile = File.createTempFile("test", ".mztab");
+    File outputFile = new File("C:\\test\\test.mztab");
     String[] args = new String[]{"-" + ARG_CONVERSION, "-" + ARG_INPUTFILE, inputPridexmlFile.getPath(), "-" + ARG_OUTPUTFILE, outputFile.getPath()};
     Converter.startConversion(MainApp.parseArgs(args));
     MzTabControllerImpl mzTabController = new MzTabControllerImpl(outputFile);
+    assertTrue("Total number of Protein IDs should be correct.", 269==mzTabController.getProteinIds().size());
     mzTabController.close();
     assertTrue("No errors reported during the conversion from  mzIdentML to MzTab", outputFile.exists());
   }
