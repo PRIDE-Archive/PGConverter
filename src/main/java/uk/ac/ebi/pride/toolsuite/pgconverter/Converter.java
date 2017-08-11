@@ -50,7 +50,7 @@ public class Converter {
     } else {
       inputFileType = FilenameUtils.getExtension(inputFile.getAbsolutePath()).toLowerCase();
       if (inputFileType.equals("xml")) {
-        inputFileType = FileType.PRIDEXML.toString();
+        inputFileType = ARG_PRIDEXML;
       }
     }
     File outputFile = null;
@@ -197,7 +197,7 @@ public class Converter {
       if (inputFormat.equals(FileType.MZID.toString())) {
         MzIdentMLControllerImpl mzIdentMLController = new MzIdentMLControllerImpl(inputFile);
         mzTabconverter = new HQMzIdentMLMzTabConverter(mzIdentMLController);
-      } else if (inputFormat.equals(FileType.PRIDEXML.toString())) {
+      } else if (inputFormat.equals(FileType.PRIDEXML.toString()) || inputFormat.equals(ARG_PRIDEXML)) {
         PrideXmlControllerImpl prideXmlController = new PrideXmlControllerImpl(inputFile);
         mzTabconverter = new PRIDEMzTabConverter(prideXmlController);
       }
