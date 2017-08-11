@@ -1,5 +1,5 @@
 # ProteoGenomics Converter tool (PGConverter)
-[Download PGConverter Latest: 1.4](https://drive.google.com/open?id=0ByPwkIg-BdVzdGZwazQtRnE0dDA)
+[Download PGConverter Latest: 1.7](https://drive.google.com/open?id=0ByPwkIg-BdVzSGEwanVuc1hDdUE)
 
 This library is primarily to offer a command-line tool to convert between the following formats for proteogenomics related data:
 mzIdentML -> mzTab -> proBed -> bigBed. For more information about proBed, see the [PSI proBed](http://www.psidev.info/probed) website. For more information about [BED](https://genome.ucsc.edu/FAQ/FAQformat.html#format1) and [bigBed](https://genome.ucsc.edu/goldenpath/help/bigBed.html), please see the UCSC website.
@@ -16,7 +16,7 @@ Primarily this tool is powered by the [ms-data-core-api](https://github.com/PRID
 * 2+ GB RAM for complex mzIdentML files.
 
 ## Instructions
-1. [Download](https://drive.google.com/open?id=0ByPwkIg-BdVzVHlOajV4UzQzXzA) the tool as a zip archive file.
+1. [Download](https://drive.google.com/open?id=0ByPwkIg-BdVzSGEwanVuc1hDdUE) the tool as a zip archive file.
 2. Extract the zip file to a directory.
 3. From a terminal / command prompt, navigate to this new extracted directory and execute a command as described under the 'usage' section below.
 
