@@ -610,40 +610,25 @@ public class Validator {
   /**
    * This method validates an input assay file.
    *
-   * @param file the input assay file.
+   * @param assayFile the input assay file.
    * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
    */
-  private static Object[] validateAssayFile(File file, FileType type, List<File> dataAccessControllerFiles) {
-    File tempFile = null;
+  private static Object[] validateAssayFile(File assayFile, FileType type, List<File> dataAccessControllerFiles) {
+    File tempFile = createNewTempFile(assayFile);
     List<File> tempDataAccessControllerFiles = new ArrayList<>();
-    try {
-      tempFile = File.createTempFile(FilenameUtils.getBaseName(file.getName()), "." + FilenameUtils.getExtension(file.getName()));
-      tempFile.deleteOnExit();
-      FileUtils.copyFile(file, tempFile);
-    } catch (IOException e) {
-      log.error("Problem creating temp file for: " + file.getPath(), e);
-    }
-    if (tempFile==null) {
-      tempFile = file;
-    }
+    boolean badtempDataAccessControllerFiles = true;
     if (CollectionUtils.isNotEmpty(dataAccessControllerFiles)) {
       for (File dataAccessControllerFile : dataAccessControllerFiles) {
-        try {
-          File tempDataAccessControllerFile = File.createTempFile(
-              FilenameUtils.getBaseName(dataAccessControllerFile.getName()), "." + FilenameUtils.getExtension(dataAccessControllerFile.getName()));
-          tempDataAccessControllerFile.deleteOnExit();
-          FileUtils.copyFile(dataAccessControllerFile, tempDataAccessControllerFile);
+        File tempDataAccessControllerFile = createNewTempFile(dataAccessControllerFile);
+        if (tempDataAccessControllerFile!=null && 0<tempDataAccessControllerFile.length()) {
           tempDataAccessControllerFiles.add(tempDataAccessControllerFile);
-        } catch (IOException e) {
-          log.error("Problem creating temp file for: " + file.getPath(), e);
         }
       }
-      if (CollectionUtils.isEmpty(tempDataAccessControllerFiles) || tempDataAccessControllerFiles.size()!=dataAccessControllerFiles.size()) {
-        tempDataAccessControllerFiles = dataAccessControllerFiles;
-      }
+      badtempDataAccessControllerFiles = CollectionUtils.isEmpty(tempDataAccessControllerFiles) ||
+          tempDataAccessControllerFiles.size()!=dataAccessControllerFiles.size();
     }
     Object[] result = new Object[2];
-    log.info("Validating assay file: " + file.getAbsolutePath());
+    log.info("Validating assay file: " + assayFile.getAbsolutePath());
     log.info("From temp file: " + tempFile.getAbsolutePath());
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
@@ -651,14 +636,14 @@ public class Validator {
       final AssayFileController assayFileController;
       switch(type) {
         case MZID :
-          assayFileController = new MzIdentMLControllerImpl(tempFile);
-          assayFileController.addMSController(tempDataAccessControllerFiles);
+          assayFileController = new MzIdentMLControllerImpl(tempFile!=null ? tempFile : assayFile);
+          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
           break;
         case PRIDEXML :
-          assayFileController = new PrideXmlControllerImpl(tempFile);
+          assayFileController = new PrideXmlControllerImpl(tempFile!=null ? tempFile : assayFile);
           break;
-        case MZTAB : assayFileController = new MzTabControllerImpl(tempFile);
-          assayFileController.addMSController(tempDataAccessControllerFiles);
+        case MZTAB : assayFileController = new MzTabControllerImpl(tempFile!=null ? tempFile : assayFile);
+          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
           break;
         default : log.error("Unrecognized assay fle type: " + type);
           assayFileController = new MzIdentMLControllerImpl(tempFile);
@@ -676,7 +661,7 @@ public class Validator {
         }
       }
       assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / NUMBER_OF_CHECKS)*100)/100);
-      report.setFileName(file.getAbsolutePath());
+      report.setFileName(assayFile.getAbsolutePath());
       assayFileSummary.setNumberOfIdentifiedSpectra(assayFileController.getNumberOfIdentifiedSpectra());
       assayFileSummary.setNumberOfPeptides(assayFileController.getNumberOfPeptides());
       assayFileSummary.setNumberOfProteins(assayFileController.getNumberOfProteins());
@@ -703,8 +688,8 @@ public class Validator {
             peptide.getModifications().forEach(modification ->
                 modification.getCvParams().forEach(cvParam -> {
                   if (cvParam.getCvLookupID() == null) {
-                    log.error("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
-                    throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + file.getPath());
+                    log.error("A PTM CV Param's ontology is not defined properly in file: " + assayFile.getPath());
+                    throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + assayFile.getPath());
                   }
                   if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
                     ptms.add(cvParam);
@@ -747,6 +732,17 @@ public class Validator {
     } catch (Exception e) {
       log.error("Exception when scanning assay file", e);
       report.setStatus("ERROR\n" + e.getMessage());
+    } finally {
+      if (tempFile!=null) {
+        log.info("Deleting temp file " + tempFile.getName() + ": " + tempFile.delete());
+      }
+      if (CollectionUtils.isNotEmpty(tempDataAccessControllerFiles)) {
+        for (File dataAccessControllerFile : tempDataAccessControllerFiles) {
+          if (dataAccessControllerFile!=null) {
+            log.info("Deleting temp file " + dataAccessControllerFile.getName() + ": " + dataAccessControllerFile.delete());
+          }
+        }
+      }
     }
     result[0] = report;
     result[1] = assayFileSummary;

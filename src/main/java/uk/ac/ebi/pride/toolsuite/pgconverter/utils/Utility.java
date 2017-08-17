@@ -1,11 +1,16 @@
 package uk.ac.ebi.pride.toolsuite.pgconverter.utils;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * This class provides general utitilies for the PGConverter tool, such as:
@@ -112,5 +117,27 @@ public class Utility {
     } catch (Exception e) {
       log.error("Exception while publishing message to REDIS channel.", e);
     }
+  }
+
+  /**
+   * Creates a new temporary file, as a copy of an input file. DeleteOnExit() is set.
+   * @param file the source input file to copy from.
+   * @return the new temporary file. This may be null if it was not created successfully.
+   */
+  public static File createNewTempFile(File file) {
+    File tempFile = null;
+    try {
+      tempFile = File.createTempFile(FilenameUtils.getBaseName(file.getName()),
+          "." + FilenameUtils.getExtension(file.getName()));
+      tempFile.deleteOnExit();
+      FileUtils.copyFile(file, tempFile);
+    } catch (IOException e) {
+      log.error("Problem creating temp fle for: " + file.getPath());
+      if (tempFile!=null) {
+        log.error("Deleting temp file " + tempFile.getName() + ": " + tempFile.delete());
+      }
+      tempFile = null;
+    }
+    return tempFile;
   }
 }
