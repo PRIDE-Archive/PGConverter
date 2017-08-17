@@ -1,10 +1,12 @@
 package uk.ac.ebi.pride.toolsuite.pgconverter;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.method.P;
 import org.xml.sax.SAXException;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.AnalyzerInstrumentComponent;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.DetectorInstrumentComponent;
@@ -64,9 +66,9 @@ public class Validator {
   public static void startValidation(CommandLine cmd) throws IOException{
     if (cmd.hasOption(ARG_MZID)) {
       validateMzdentML(cmd);
-      } else if (cmd.hasOption(ARG_PRIDEXML)) {
+    } else if (cmd.hasOption(ARG_PRIDEXML)) {
       validatePrideXML(cmd);
-      } else if (cmd.hasOption(ARG_MZTAB)) {
+    } else if (cmd.hasOption(ARG_MZTAB)) {
       validateMzTab(cmd);
     } else if (cmd.hasOption(ARG_PROBED)) {
       validateProBed(cmd);
@@ -154,7 +156,7 @@ public class Validator {
     List<File> filesToValidate = new ArrayList<File>();
     File file = new File(cmd.getOptionValue(ARG_PRIDEXML));
     if (file.isDirectory()) {
-     log.error("Unable to validate against directory");
+      log.error("Unable to validate against directory");
     } else {
       filesToValidate.add(file);
     }
@@ -176,8 +178,8 @@ public class Validator {
       }
       if (valid ) {
         if(cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
-            report.setStatusOK();
-          } else {
+          report.setStatusOK();
+        } else {
           Object[] validation = validateAssayFile(pridexxml, FileType.PRIDEXML, null);
           report = (Report) validation[0];
           assayFileSummary = (AssayFileSummary) validation[1];
@@ -383,7 +385,7 @@ public class Validator {
           log.info("Skipping report serialization.");
         }
       } catch (IOException ioe) {
-          log.error("Problem when writing report file: ", ioe);
+        log.error("Problem when writing report file: ", ioe);
       }
     }
   }
@@ -408,7 +410,7 @@ public class Validator {
         }
       }
       if (!matched) {
-          return false;
+        return false;
       }
     }
     return true;
@@ -556,7 +558,7 @@ public class Validator {
    * @throws IOException if there are problems reading or writing to the file system.
    */
   private static void scanRefIdControllerpecificDetails(ReferencedIdentificationController referencedIdentificationController, List<File> peakFiles, AssayFileSummary assayFileSummary) throws IOException {
-    log.info("Started scanning for mzid-specific details");
+    log.info("Started scanning for mzid- or mztab-specific details");
     Set<PeakFileSummary> peakFileSummaries = new HashSet<>();
     List<String> peakFileNames = new ArrayList<>();
     for (File peakFile : peakFiles) {
@@ -612,25 +614,54 @@ public class Validator {
    * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
    */
   private static Object[] validateAssayFile(File file, FileType type, List<File> dataAccessControllerFiles) {
+    File tempFile = null;
+    List<File> tempDataAccessControllerFiles = new ArrayList<>();
+    try {
+      tempFile = File.createTempFile(FilenameUtils.getBaseName(file.getName()), "." + FilenameUtils.getExtension(file.getName()));
+      tempFile.deleteOnExit();
+      FileUtils.copyFile(file, tempFile);
+    } catch (IOException e) {
+      log.error("Problem creating temp file for: " + file.getPath(), e);
+    }
+    if (tempFile==null) {
+      tempFile = file;
+    }
+    if (CollectionUtils.isNotEmpty(dataAccessControllerFiles)) {
+      for (File dataAccessControllerFile : dataAccessControllerFiles) {
+        try {
+          File tempDataAccessControllerFile = File.createTempFile(
+              FilenameUtils.getBaseName(dataAccessControllerFile.getName()), "." + FilenameUtils.getExtension(dataAccessControllerFile.getName()));
+          tempDataAccessControllerFile.deleteOnExit();
+          FileUtils.copyFile(dataAccessControllerFile, tempDataAccessControllerFile);
+          tempDataAccessControllerFiles.add(tempDataAccessControllerFile);
+        } catch (IOException e) {
+          log.error("Problem creating temp file for: " + file.getPath(), e);
+        }
+      }
+      if (CollectionUtils.isEmpty(tempDataAccessControllerFiles) || tempDataAccessControllerFiles.size()!=dataAccessControllerFiles.size()) {
+        tempDataAccessControllerFiles = dataAccessControllerFiles;
+      }
+    }
     Object[] result = new Object[2];
     log.info("Validating assay file: " + file.getAbsolutePath());
+    log.info("From temp file: " + tempFile.getAbsolutePath());
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
     try {
       final AssayFileController assayFileController;
       switch(type) {
         case MZID :
-          assayFileController = new MzIdentMLControllerImpl(file);
-          assayFileController.addMSController(dataAccessControllerFiles);
+          assayFileController = new MzIdentMLControllerImpl(tempFile);
+          assayFileController.addMSController(tempDataAccessControllerFiles);
           break;
         case PRIDEXML :
-          assayFileController = new PrideXmlControllerImpl(file);
+          assayFileController = new PrideXmlControllerImpl(tempFile);
           break;
-        case MZTAB : assayFileController = new MzTabControllerImpl(file);
-          assayFileController.addMSController(dataAccessControllerFiles);
+        case MZTAB : assayFileController = new MzTabControllerImpl(tempFile);
+          assayFileController.addMSController(tempDataAccessControllerFiles);
           break;
         default : log.error("Unrecognized assay fle type: " + type);
-          assayFileController = new MzIdentMLControllerImpl(file);
+          assayFileController = new MzIdentMLControllerImpl(tempFile);
           break;
       }
       Set<String> uniquePeptides = new HashSet<>();
@@ -704,8 +735,6 @@ public class Validator {
       scanForSearchDetails(assayFileController, assayFileSummary);
       switch(type) {
         case MZID :
-          scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
-          break;
         case MZTAB :
           scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
           break;
@@ -1216,31 +1245,31 @@ public class Validator {
       AsqlDataType asqlDataType = null;
       String asqlName;
       String asqlDesc;
-        if (lines.size()>4) {
-          for (int i=3; i<lines.size()-1; i++) {
-            line = lines.get(i);
-            line = line.replace(";", "");
-            String[] parts = line.split("  ", 3);
-            if (parts.length==3) {
-              for (AsqlDataType asqlDataTypeToCheck : AsqlDataType.values()) {
-                if (asqlDataTypeToCheck.toString().equals(parts[0])) {
-                  asqlDataType = asqlDataTypeToCheck;
-                  break;
-                }
+      if (lines.size()>4) {
+        for (int i=3; i<lines.size()-1; i++) {
+          line = lines.get(i);
+          line = line.replace(";", "");
+          String[] parts = line.split("  ", 3);
+          if (parts.length==3) {
+            for (AsqlDataType asqlDataTypeToCheck : AsqlDataType.values()) {
+              if (asqlDataTypeToCheck.toString().equals(parts[0])) {
+                asqlDataType = asqlDataTypeToCheck;
+                break;
               }
-              if (asqlDataType==null) {
-                log.error("ASQL data type has not been set! " + line);
-              }
-              asqlName = parts[1];
-              asqlDesc = parts[2];
-              result.add(new AsqlTriple(asqlDataType, asqlName, asqlDesc));
-            } else {
-              log.error("aSQL has a line without 3 parts to it, unable to parse properly: " + asqlFile.getPath() + "\n" + lines.get(i));
             }
+            if (asqlDataType==null) {
+              log.error("ASQL data type has not been set! " + line);
+            }
+            asqlName = parts[1];
+            asqlDesc = parts[2];
+            result.add(new AsqlTriple(asqlDataType, asqlName, asqlDesc));
+          } else {
+            log.error("aSQL has a line without 3 parts to it, unable to parse properly: " + asqlFile.getPath() + "\n" + lines.get(i));
           }
-        } else {
-          log.error("aSQL is too short, unable to parse properly: " + asqlFile.getPath());
         }
+      } else {
+        log.error("aSQL is too short, unable to parse properly: " + asqlFile.getPath());
+      }
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -1275,8 +1304,8 @@ public class Validator {
       case DOUBLE:
         result = validProbedFieldDouble(value);
         break;
-        default:
-          log.error("Unrecognized ASQL data type: " + asqlTriple.getAsqlDataType());
+      default:
+        log.error("Unrecognized ASQL data type: " + asqlTriple.getAsqlDataType());
     }
     return result;
   }
