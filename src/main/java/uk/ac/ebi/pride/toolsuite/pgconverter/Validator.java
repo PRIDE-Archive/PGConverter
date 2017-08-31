@@ -424,8 +424,13 @@ public class Validator {
    */
   private static void scanForGeneralMetadata(DataAccessController dataAccessController, AssayFileSummary assayFileSummary) {
     log.info("Started scanning for general metadata.");
-    assayFileSummary.setName(dataAccessController.getName());
-    assayFileSummary.setShortLabel(StringUtils.isEmpty(dataAccessController.getExperimentMetaData().getShortLabel()) ? "" : dataAccessController.getExperimentMetaData().getShortLabel() );
+    String title = dataAccessController.getExperimentMetaData().getName();
+    assayFileSummary.setName(StringUtils.isEmpty(title) || title.contains("no assay title provided") ?
+        dataAccessController.getName() :
+        title);
+    assayFileSummary.setShortLabel(StringUtils.isEmpty(dataAccessController.getExperimentMetaData().getShortLabel()) ?
+        "" :
+        dataAccessController.getExperimentMetaData().getShortLabel());
     assayFileSummary.addContacts(DataConversionUtil.convertContact(dataAccessController.getExperimentMetaData().getPersons()));
     ParamGroup additional = dataAccessController.getExperimentMetaData().getAdditional();
     assayFileSummary.addCvParams(DataConversionUtil.convertAssayGroupCvParams(additional));
