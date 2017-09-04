@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.toolsuite.pgconverter.utils;
 
+import com.google.common.io.Files;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -127,9 +128,10 @@ public class Utility {
   public static File createNewTempFile(File file) {
     File tempFile = null;
     try {
-      tempFile = File.createTempFile(FilenameUtils.getBaseName(file.getName()),
-          "." + FilenameUtils.getExtension(file.getName()));
+      tempFile = new File (Files.createTempDir(), file.getName());
+      File tempParentFile = tempFile.getParentFile();
       tempFile.deleteOnExit();
+      tempParentFile.deleteOnExit();
       FileUtils.copyFile(file, tempFile);
     } catch (IOException e) {
       log.error("Problem creating temp fle for: " + file.getPath());
