@@ -656,16 +656,16 @@ public class Validator {
       }
       Set<String> uniquePeptides = new HashSet<>();
       Set<CvParam> ptms = new HashSet<>();
-      final int NUMBER_OF_CHECKS=1;
+      final int NUMBER_OF_CHECKS=10;
       List<Boolean> randomChecks = new ArrayList<>();
-      IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(1, 4.0)));
+      IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(NUMBER_OF_CHECKS, 4.0)));
       int checkFalseCounts = 0;
       for (Boolean check : randomChecks) {
         if (!check) {
           checkFalseCounts++;
         }
       }
-      assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / NUMBER_OF_CHECKS)*100)/100);
+      assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / (NUMBER_OF_CHECKS*NUMBER_OF_CHECKS))*100)/100);
       report.setFileName(assayFile.getAbsolutePath());
       assayFileSummary.setNumberOfIdentifiedSpectra(assayFileController.getNumberOfIdentifiedSpectra());
       assayFileSummary.setNumberOfPeptides(assayFileController.getNumberOfPeptides());
@@ -679,28 +679,29 @@ public class Validator {
         for (Comparable proteinId : assayFileController.getProteinIds()) {
           protCount++;
           if (log.isDebugEnabled()) {
-            log.debug("\nPercent through total proteins, " + protCount + " / " +   assayFileController.getProteinIds().size() + " : " + ((int)((protCount * 100.0f) /  assayFileController.getProteinIds().size())) );
+            log.debug("\nPercent through total proteins, " + protCount + " / " + assayFileController.getProteinIds().size() + " : " + ((int) ((protCount * 100.0f) / assayFileController.getProteinIds().size())));
             calcCacheSizses(assayFileController);
           }
           for (Peptide peptide : assayFileController.getProteinById(proteinId).getPeptides()) {
             pepCount++;
             if (log.isDebugEnabled()) {
-              if (((int)pepCount) % PEP_STEP_SIZE == 0) {
+              if (((int) pepCount) % PEP_STEP_SIZE == 0) {
                 log.info("Processed another " + PEP_STEP_SIZE + " peptides. Now at: " + pepCount);
               }
             }
             uniquePeptides.add(peptide.getSequence());
-            peptide.getModifications().forEach(modification ->
-                modification.getCvParams().forEach(cvParam -> {
-                  if (cvParam.getCvLookupID() == null) {
-                    log.error("A PTM CV Param's ontology is not defined properly in file: " + assayFile.getPath());
-                    throw new NullPointerException("A PTM CV Param's ontology is not defined properly in file: " + assayFile.getPath());
-                  }
-                  if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
-                    ptms.add(cvParam);
-                  }
-                })
-            );
+            for (Modification modification : peptide.getModifications()) {
+              for (CvParam cvParam : modification.getCvParams()) {
+                if (StringUtils.isEmpty(cvParam.getCvLookupID())|| StringUtils.isEmpty(cvParam.getAccession()) || StringUtils.isEmpty(cvParam.getName())) {
+                  String message = "A PTM CV Param's ontology, accession, or name is not defined properly: " + cvParam.toString() + " in file: " +  assayFile.getPath();
+                  log.error(message);
+                  throw new NullPointerException(message);
+                }
+                if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
+                  ptms.add(cvParam);
+                }
+              }
+            }
           }
         }
         List<Boolean> matches = new ArrayList<>();
@@ -717,7 +718,9 @@ public class Validator {
         assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
         assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
       } else {
-        log.error("Missing spectra are present");
+        String message = "Missing spectra are present";
+        log.error(message);
+        report.setStatus("ERROR\n" + message);
       }
       scanForGeneralMetadata(assayFileController, assayFileSummary);
       scanForInstrument(assayFileController, assayFileSummary);
@@ -1195,7 +1198,7 @@ public class Validator {
    * @return
    */
   private static boolean validProbedFieldUnsignedInteger(String field) {
-    boolean result = true;
+    boolean result;
     if (org.apache.commons.lang3.StringUtils.isEmpty(field) || !field.matches(".*\\d+.*") || field.contains("-")) {
       result = false;
     } else {
@@ -1312,78 +1315,3 @@ public class Validator {
   }
 }
 
-/**
- * Class to store the ASQL schema datatype information about fields.
- */
-class AsqlTriple {
-  private AsqlDataType asqlDataType;
-  private String asqlName;
-  private String asqlDesc;
-
-  /**
-   * Default constructor.
-   */
-  AsqlTriple() {
-  }
-
-  /**
-   * Constructor with all the supplied variables to hold BED data type information.
-   *
-   * @param asqlDataType the field's data type
-   * @param asqlName the field's name
-   * @param asqlDesc the field's description
-   */
-  AsqlTriple(AsqlDataType asqlDataType, String asqlName, String asqlDesc) {
-    this.asqlDataType = asqlDataType;
-    this.asqlName = asqlName;
-    this.asqlDesc = asqlDesc;
-  }
-
-  /**
-   * Gets the data type.
-   * @return the data type.
-   */
-  public AsqlDataType getAsqlDataType() {
-    return asqlDataType;
-  }
-
-  /**
-   * Sets the data type.
-   * @param asqlDataType the data type.
-   */
-  public void setAsqlDataType(AsqlDataType asqlDataType) {
-    this.asqlDataType = asqlDataType;
-  }
-
-  /**
-   * Gets the name.
-   * @return the name.
-   */
-  public String getAsqlName() {
-    return asqlName;
-  }
-
-  /**
-   * Sets the name.
-   * @param asqlName the name.
-   */
-  public void setAsqlName(String asqlName) {
-    this.asqlName = asqlName;
-  }
-
-  /**
-   * Gets the description.
-   * @return the description.
-   */
-  public String getAsqlDesc() {
-    return asqlDesc;
-  }
-
-  /**
-   * Sets the description.
-   * @param asqlDesc the description.
-   */
-  public void setAsqlDesc(String asqlDesc) {
-    this.asqlDesc = asqlDesc;
-  }
-}
