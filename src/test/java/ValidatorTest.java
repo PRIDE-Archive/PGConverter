@@ -28,7 +28,7 @@ public class ValidatorTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
-  public void testMzidValidator() throws Exception{
+  public void testMzidValidator() throws Exception {
     URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
@@ -51,7 +51,7 @@ public class ValidatorTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
-  public void testMzidSchemaValidator() throws Exception{
+  public void testMzidSchemaValidator() throws Exception {
     URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
@@ -89,7 +89,7 @@ public class ValidatorTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
-  public void testPridexmlValidator() throws Exception{
+  public void testPridexmlValidator() throws Exception {
     URL url = ConverterTest.class.getClassLoader().getResource("test.xml");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
@@ -107,7 +107,7 @@ public class ValidatorTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
-  public void testPridexmlSchemaValidator() throws Exception{
+  public void testPridexmlSchemaValidator() throws Exception {
     URL url = ConverterTest.class.getClassLoader().getResource("test.xml");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
@@ -125,7 +125,7 @@ public class ValidatorTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
-  public void testMztabValidator() throws Exception{
+  public void testMztabValidator() throws Exception {
     URL url = ConverterTest.class.getClassLoader().getResource("test.mztab");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
@@ -142,7 +142,7 @@ public class ValidatorTest {
     assertTrue("No errors reported during the validation of the mzTab file", reportStatus(reportFile));
   }
 
-  private boolean reportStatus(File report) throws Exception{
+  private boolean reportStatus(File report) throws Exception {
     boolean result = false;
     List<String> reportLines = new ArrayList<>();
     Stream<String> stream = Files.lines(report.toPath(), Charset.defaultCharset());
@@ -170,7 +170,7 @@ public class ValidatorTest {
   }
 
   @Test
-  public void testProbedValidator() throws Exception{
+  public void testProbedValidator() throws Exception {
     URL url = ConverterTest.class.getClassLoader().getResource("test.pro.bed");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
@@ -180,5 +180,64 @@ public class ValidatorTest {
     String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_PROBED, inputProbedFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
     Validator.startValidation(MainApp.parseArgs(args));
     assertTrue("No errors reported during the validation of the mzTab file", reportStatus(reportFile));
+  }
+
+  /**
+   * This test validates one example mzIdentML file which is related to a "purposefully bad" single peak .mgf file (without schema validation).
+   *
+   * @throws Exception if there are problems opening the example file.
+   */
+  @Test
+  public void testBadMissingPeaksMzidValidator() throws Exception {
+    URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputMzidFile = new File(url.toURI());
+    url = ConverterTest.class.getClassLoader().getResource("missing-peaks.mgf");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputMgfFile = new File(url.toURI());
+    File reportFile = File.createTempFile("testMzid", ".log");
+    String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_MZID, inputMzidFile.getPath(), "-" + ARG_PEAK, inputMgfFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
+    Validator.startValidation(MainApp.parseArgs(args));
+    Exception e = null;
+    try {
+      boolean reportStatus = reportStatus(reportFile); //unused
+    } catch (IOException ioe) {
+      e = ioe;
+    }
+    assertTrue("Errors correctly reported during the validation of the mzIdentML file", e!=null);
+  }
+
+  /**
+   * This test validates one "purposefully bad" example mzIdentML file with badly reported PTM CV Pararams,
+   * which is related to a single peak .mgf file (without schema validation).
+   *
+   * @throws Exception if there are problems opening the example file.
+   */
+  @Test
+  public void testBadPtmCvparamsMzidValidator() throws Exception {
+    URL url = ConverterTest.class.getClassLoader().getResource("bad-ptm-cvps.mzid");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputMzidFile = new File(url.toURI());
+    url = ConverterTest.class.getClassLoader().getResource("test.mgf");
+    if (url == null) {
+      throw new IllegalStateException("no file for input found!");
+    }
+    File inputMgfFile = new File(url.toURI());
+    File reportFile = File.createTempFile("testMzid", ".log");
+    String[] args = new String[]{"-" + ARG_VALIDATION, "-" + ARG_MZID, inputMzidFile.getPath(), "-" + ARG_PEAK, inputMgfFile.getPath(), "-" + ARG_SKIP_SERIALIZATION, "-" + ARG_REPORTFILE , reportFile.getPath()};
+    Validator.startValidation(MainApp.parseArgs(args));
+    Exception e = null;
+    try {
+      boolean reportStatus = reportStatus(reportFile); //unused
+    } catch (IOException ioe) {
+      e = ioe;
+    }
+    assertTrue("Errors correctly reported during the validation of the mzIdentML file", e!=null);
   }
 }
