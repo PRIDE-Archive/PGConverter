@@ -825,7 +825,7 @@ public class Validator {
     } catch (IOException | SAXException e) {
       log.error("File Not Found or SAX Exception: ", e);
     } catch (URISyntaxException usi) {
-      log.error("URI syntax exxception: ", usi);
+      log.error("URI syntax exception: ", usi);
     }
     return result;
   }
@@ -915,7 +915,7 @@ public class Validator {
       stream.parallel().forEach(s -> validateProbeLine(errorMessages, defaultBedColumnCount, proBedOptionalColumnsCount, asqlTriples, uniqueNames, s));
       if (errorMessages.size()>0) {
         StringBuffer errorsReported = new StringBuffer();
-        errorMessages.parallelStream().limit(100).forEach(s -> errorsReported.append(s + "\n"));
+        errorMessages.parallelStream().limit(100).forEach(s -> errorsReported.append(s).append("\n"));
         report.setStatus("ERROR: " + errorMessages.size() + " problems encountered. See below for (up to) the first 100 reported errors : \n" + errorsReported);
       } else {
         report.setStatusOK();
@@ -1118,14 +1118,15 @@ public class Validator {
       URL url = Validator.class.getClassLoader().getResource("probed-1.0.0.as");
       if (url == null) {
         log.error("Unable to read default proBed ASQL schema file!");
-      }
-      try {
-        File tempAs = File.createTempFile("probed_default", ".as");
-        tempAs.deleteOnExit();
-        FileUtils.copyURLToFile(url, tempAs);
-        ASQL_FILE = tempAs;
-      } catch (IOException e) {
-        log.error("Unable to read default proBed ASQL schema file!", e);
+      } else {
+        try {
+          File tempAs = File.createTempFile("probed_default", ".as");
+          tempAs.deleteOnExit();
+          FileUtils.copyURLToFile(url, tempAs);
+          ASQL_FILE = tempAs;
+        } catch (IOException e) {
+          log.error("Unable to read default proBed ASQL schema file!", e);
+        }
       }
     }
     validateProBed(proBed, COLUMN_FORMAT, REPORT_FILE, ASQL_FILE);
@@ -1158,7 +1159,7 @@ public class Validator {
    * This method checks if a field is allowed to be null or not.
    * @param field the field to check.
    * @param nullable if the field is allowed to be null.
-   * @return
+   * @return true if nullable, flase otherwise.
    */
   private static boolean validProbedFieldNullable(String field, boolean nullable) {
     return (field!=null && !field.equalsIgnoreCase(".")) || nullable;
@@ -1167,7 +1168,7 @@ public class Validator {
   /**
    * This method checks if a field is a non-empty String.
    * @param field the field to check.
-   * @return
+   * @return true if the field is not null or empty, false otherwise
    */
   private static boolean validProbedFieldString(String field) {
     return (!org.apache.commons.lang3.StringUtils.isEmpty(field));
@@ -1176,7 +1177,7 @@ public class Validator {
   /**
    * This method checks if a field is an integer.
    * @param field the field to check.
-   * @return
+   * @return true if the field is an integer, false otherwise.
    */
   private static boolean validProbedFieldInteger(String field) {
     boolean result = true;
@@ -1195,7 +1196,7 @@ public class Validator {
   /**
    * This method checks if a field is an unsigned integer.
    * @param field the field to check.
-   * @return
+   * @return true if the field is an unsigned integer, false otherwise.
    */
   private static boolean validProbedFieldUnsignedInteger(String field) {
     boolean result;
@@ -1210,7 +1211,7 @@ public class Validator {
   /**
    * This method checks if a field is a double.
    * @param field the field to check.
-   * @return
+   * @return true if the field is a double, false otherwise.
    */
   private static boolean validProbedFieldDouble(String field) {
     boolean result = true;
@@ -1230,7 +1231,7 @@ public class Validator {
   /**
    * This method checks if a field is a character.
    * @param field the field to check.
-   * @return
+   * @return true if the field is a character, false otherwise.
    */
   private static boolean validProbedFieldCharacter(String field) {
     return field.length()==1;
