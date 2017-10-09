@@ -45,8 +45,6 @@ public class AssayFileSummary implements Serializable {
 
   /**
    * Default constructor, sets all the variables to default values.
-   *
-   * @author Tobias Ternent
    */
   public AssayFileSummary() {
     this.id = -1;
