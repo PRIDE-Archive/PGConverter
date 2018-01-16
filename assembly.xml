@@ -10,7 +10,7 @@
 
     <dependencySets>
         <dependencySet>
-            <outputDirectory>${assembly.dir}/lib</outputDirectory>
+            <outputDirectory>/lib</outputDirectory>
             <unpack>false</unpack>
             <scope>runtime</scope>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}
@@ -24,12 +24,12 @@
             <includes>
                 <include>*.jar</include>
             </includes>
-            <outputDirectory>${assembly.dir}</outputDirectory>
+            <outputDirectory>/</outputDirectory>
         </fileSet>
 
         <fileSet>
             <directory>${project.basedir}</directory>
-            <outputDirectory>${assembly.dir}/log</outputDirectory>
+            <outputDirectory>/log</outputDirectory>
             <excludes>
                 <exclude>**/*</exclude>
             </excludes>
