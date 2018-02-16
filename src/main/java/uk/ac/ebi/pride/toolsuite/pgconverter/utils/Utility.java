@@ -107,7 +107,6 @@ public class Utility {
    * @param message the message content.
    */
   public static void notifyRedisChannel(String jedisServer, int jedisPort, String jedisPassword, String assayChannel, String message) {
-    try {
       log.info("Connecting to REDIS channel:" + assayChannel);
       JedisPool pool = new JedisPool(new JedisPoolConfig(), jedisServer, jedisPort, 0, jedisPassword);
       Jedis jedis = pool.getResource();
@@ -115,9 +114,6 @@ public class Utility {
       jedis.publish(assayChannel, message);
       log.info("Published message to REDIS, closing connection");
       jedis.quit();
-    } catch (Exception e) {
-      log.error("Exception while publishing message to REDIS channel.", e);
-    }
   }
 
   /**

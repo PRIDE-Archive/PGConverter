@@ -484,6 +484,13 @@ public class Report {
   }
 
   /**
+   * Sets new OK status.
+   **/
+  public void setStatusError(String message) {
+    this.status = "ERROR\n" + message;
+  }
+
+  /**
    * Sets new uniquePTMs.
    *
    * @param uniquePTMs New value of uniquePTMs.
