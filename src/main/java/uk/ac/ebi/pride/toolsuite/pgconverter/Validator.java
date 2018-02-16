@@ -21,7 +21,6 @@ import uk.ac.ebi.pride.tools.cl.PrideXmlClValidator;
 import uk.ac.ebi.pride.tools.cl.XMLValidationErrorHandler;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
-import uk.ac.ebi.pride.utilities.data.controller.cache.CacheEntry;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.*;
 import uk.ac.ebi.pride.utilities.data.core.*;
 import uk.ac.ebi.pride.utilities.data.core.Software;
@@ -83,9 +82,8 @@ public class Validator {
    *
    * @param file the input file.
    * @return the corresponding FileType.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static FileType getFileType(File file) throws IOException {
+  private static FileType getFileType(File file) {
     FileType result;
     log.info("Checking file type for : " + file);
     if (PrideXmlControllerImpl.isValidFormat(file)) {
@@ -230,9 +228,8 @@ public class Validator {
    *
    * @param file the input file for validation.
    * @return List of extracted files for validation.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static List<File> getFilesToValidate(File file) throws IOException {
+  private static List<File> getFilesToValidate(File file) {
     List<File> filesToValidate = new ArrayList<>();
     if (file.isDirectory()) {
       log.error("Unable to validate against directory of mzid files.");
@@ -250,7 +247,7 @@ public class Validator {
    * @return List of peak files.
    * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static List<File> getPeakFiles(CommandLine cmd) throws IOException {
+  private static List<File> getPeakFiles(CommandLine cmd) {
     List<File> peakFiles = new ArrayList<>();
     if (cmd.hasOption(ARG_PEAK) || cmd.hasOption(ARG_PEAKS)) {
       String[] peakFilesString = cmd.hasOption(ARG_PEAK) ? cmd.getOptionValues(ARG_PEAK)
@@ -613,50 +610,31 @@ public class Validator {
    * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
    */
   private static ValidationResult validateAssayFile(File assayFile, FileType type, List<File> dataAccessControllerFiles) {
-    File tempFile = createNewTempFile(assayFile);
+    File tempAssayFile = createNewTempFile(assayFile);
     List<File> tempDataAccessControllerFiles = new ArrayList<>();
-    boolean badtempDataAccessControllerFiles = true;
-    if (CollectionUtils.isNotEmpty(dataAccessControllerFiles)) {
-      for (File dataAccessControllerFile : dataAccessControllerFiles) {
-        File tempDataAccessControllerFile = createNewTempFile(dataAccessControllerFile);
-        if (tempDataAccessControllerFile!=null && 0<tempDataAccessControllerFile.length()) {
-          tempDataAccessControllerFiles.add(tempDataAccessControllerFile);
-        }
-      }
-      badtempDataAccessControllerFiles = CollectionUtils.isEmpty(tempDataAccessControllerFiles) ||
-          tempDataAccessControllerFiles.size()!=dataAccessControllerFiles.size();
-    }
+    boolean badtempDataAccessControllerFiles = createTempDataAccessControllerFiles(dataAccessControllerFiles, tempDataAccessControllerFiles);
     log.info("Validating assay file: " + assayFile.getAbsolutePath());
-    log.info("From temp file: " + tempFile.getAbsolutePath());
+    log.info("From temp file: " + tempAssayFile.getAbsolutePath());
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
     try {
       final AssayFileController assayFileController;
       switch(type) {
         case MZID :
-          assayFileController = new MzIdentMLControllerImpl(tempFile!=null ? tempFile : assayFile);
+          assayFileController = new MzIdentMLControllerImpl(tempAssayFile);
           assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
           break;
         case PRIDEXML :
-          assayFileController = new PrideXmlControllerImpl(tempFile!=null ? tempFile : assayFile);
+          assayFileController = new PrideXmlControllerImpl(tempAssayFile);
           break;
-        case MZTAB : assayFileController = new MzTabControllerImpl(tempFile!=null ? tempFile : assayFile);
+        case MZTAB : assayFileController = new MzTabControllerImpl(tempAssayFile);
           assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
           break;
         default : log.error("Unrecognized assay fle type: " + type);
-          assayFileController = new MzIdentMLControllerImpl(tempFile);
+          assayFileController = new MzIdentMLControllerImpl(tempAssayFile);
           break;
       }
-      final int NUMBER_OF_CHECKS = 10;
-      List<Boolean> randomChecks = new ArrayList<>();
-      IntStream.range(1, NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(NUMBER_OF_CHECKS, 4.0)));
-      int checkFalseCounts = 0;
-      for (Boolean check : randomChecks) {
-        if (!check) {
-          checkFalseCounts++;
-        }
-      }
-      assayFileSummary.setDeltaMzErrorRate(new BigDecimal(((double) checkFalseCounts / (NUMBER_OF_CHECKS*NUMBER_OF_CHECKS))).setScale(2, RoundingMode.HALF_UP).doubleValue());
+      checkSampleDeltaMzErrorRate(assayFileSummary, assayFileController);
       report.setFileName(assayFile.getAbsolutePath());
       assayFileSummary.setNumberOfIdentifiedSpectra(assayFileController.getNumberOfIdentifiedSpectra());
       assayFileSummary.setNumberOfPeptides(assayFileController.getNumberOfPeptides());
@@ -670,18 +648,7 @@ public class Validator {
         log.error(message);
         report.setStatusError(message);
       }
-      scanForGeneralMetadata(assayFileController, assayFileSummary);
-      scanForInstrument(assayFileController, assayFileSummary);
-      scanForSoftware(assayFileController, assayFileSummary);
-      scanForSearchDetails(assayFileController, assayFileSummary);
-      switch(type) {
-        case MZID :
-        case MZTAB :
-          scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
-          break;
-        default : // do nothing
-          break;
-      }
+      scanExtraMetadataDetails(type, dataAccessControllerFiles, assayFileSummary, assayFileController);
       if (StringUtils.isEmpty(report.getStatus())) {
         report.setStatusOK();
       }
@@ -689,18 +656,86 @@ public class Validator {
       log.error("Null pointer Exception when scanning assay file", e);
       report.setStatusError(e.getMessage());
     } finally {
-      if (tempFile!=null) {
-        deleteTempFile(tempFile);
+      deleteAllTempFiles(tempAssayFile, tempDataAccessControllerFiles);
+    }
+    return new ValidationResult(assayFileSummary, report);
+  }
+
+  /**
+   * Creates temp data access controller files.
+   * @param dataAccessControllerFiles the input data access controller files
+   * @param tempDataAccessControllerFiles the temp data acceess controller files that get created
+   * @return true if all the temp files were created OK, false otherwise
+   */
+  private static boolean createTempDataAccessControllerFiles(List<File> dataAccessControllerFiles, List<File> tempDataAccessControllerFiles) {
+    boolean badtempDataAccessControllerFiles = true;
+    if (CollectionUtils.isNotEmpty(dataAccessControllerFiles)) {
+      for (File dataAccessControllerFile : dataAccessControllerFiles) {
+        File tempDataAccessControllerFile = createNewTempFile(dataAccessControllerFile);
+        if (tempDataAccessControllerFile!=null && 0<tempDataAccessControllerFile.length()) {
+          tempDataAccessControllerFiles.add(tempDataAccessControllerFile);
+        }
       }
-      if (CollectionUtils.isNotEmpty(tempDataAccessControllerFiles)) {
-        for (File dataAccessControllerFile : tempDataAccessControllerFiles) {
-          if (dataAccessControllerFile != null) {
-            deleteTempFile(dataAccessControllerFile);
-          }
+      badtempDataAccessControllerFiles = CollectionUtils.isEmpty(tempDataAccessControllerFiles) ||
+          tempDataAccessControllerFiles.size()!=dataAccessControllerFiles.size();
+    }
+    return badtempDataAccessControllerFiles;
+  }
+
+  /**
+   * Deletes all the temporary files (assay file, data access controller files).
+   * @param tempAssayFile the temp assay file to be deleted
+   * @param tempDataAccessControllerFiles the temp data access controller files to be deleted
+   */
+  private static void deleteAllTempFiles(File tempAssayFile, List<File> tempDataAccessControllerFiles) {
+    deleteTempFile(tempAssayFile);
+    if (CollectionUtils.isNotEmpty(tempDataAccessControllerFiles)) {
+      for (File dataAccessControllerFile : tempDataAccessControllerFiles) {
+        if (dataAccessControllerFile != null) {
+          deleteTempFile(dataAccessControllerFile);
         }
       }
     }
-    return new ValidationResult(assayFileSummary, report);
+  }
+
+  /**
+   * Checks a sampling of the delta m/z error rates.
+   * @param assayFileSummary the assay file summary
+   * @param assayFileController the assay file controller
+   */
+  private static void checkSampleDeltaMzErrorRate(AssayFileSummary assayFileSummary, AssayFileController assayFileController) {
+    final int NUMBER_OF_CHECKS = 10;
+    List<Boolean> randomChecks = new ArrayList<>();
+    IntStream.range(1, NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(NUMBER_OF_CHECKS, 4.0)));
+    int checkFalseCounts = 0;
+    for (Boolean check : randomChecks) {
+      if (!check) {
+        checkFalseCounts++;
+      }
+    }
+    assayFileSummary.setDeltaMzErrorRate(new BigDecimal(((double) checkFalseCounts / (NUMBER_OF_CHECKS*NUMBER_OF_CHECKS))).setScale(2, RoundingMode.HALF_UP).doubleValue());
+  }
+
+  /**
+   * Scans for extra metadata details.
+   * @param type the filetype
+   * @param dataAccessControllerFiles the data access controller files
+   * @param assayFileSummary the assay file summary
+   * @param assayFileController the assay file controller
+   */
+  private static void scanExtraMetadataDetails(FileType type, List<File> dataAccessControllerFiles, AssayFileSummary assayFileSummary, AssayFileController assayFileController) {
+    scanForGeneralMetadata(assayFileController, assayFileSummary);
+    scanForInstrument(assayFileController, assayFileSummary);
+    scanForSoftware(assayFileController, assayFileSummary);
+    scanForSearchDetails(assayFileController, assayFileSummary);
+    switch(type) {
+      case MZID :
+      case MZTAB :
+        scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
+        break;
+      default : // do nothing
+        break;
+    }
   }
 
   /**
@@ -732,10 +767,20 @@ public class Validator {
     List<Boolean> matches = new ArrayList<>();
     matches.add(true);
     IntStream.range(1, (assayFileController.getNumberOfPeptides()<100 ? assayFileController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
-      Peptide peptide = assayFileController.getProteinById(assayFileController.getProteinIds().stream().findAny().get()).getPeptides().stream().findAny().get();
-      if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
-        if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
-          matches.add(false);
+      Protein protein = assayFileController.getProteinById(assayFileController.getProteinIds().stream().findAny().orElse(null));
+      Peptide peptide = null;
+      if (protein != null) {
+        peptide = protein.getPeptides().stream().findAny().orElse(null);
+      } else {
+        log.error("Unable to read a random protein.");
+      }
+      if (peptide != null) {
+        if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
+          if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
+            matches.add(false);
+          }
+        } else {
+          log.error("Unable to read peptide form protein: " + protein.toString());
         }
       }
     });
@@ -744,24 +789,12 @@ public class Validator {
     assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
   }
 
+  /**
+   * Deletes a temporary file
+   * @param tempFile the temp file to be deleted.
+   */
   private static void deleteTempFile(File tempFile) {
     log.info("Deleting temp file " + tempFile.getName() + ": " + tempFile.delete());
-  }
-
-  /**
-   * This method outputs the cache sizes for debugging purposes.
-   *
-   * @param cachedDataAccessController the data access controller for the assay file
-   */
-  private static void calcCacheSizses(CachedDataAccessController cachedDataAccessController) {
-    Arrays.stream(CacheEntry.values()).forEach(cacheEntry -> log.debug("Cache entry: " + cacheEntry.name() + " Size: " + (
-        (cachedDataAccessController.getCache().get(cacheEntry)==null?
-            "null" :
-            cachedDataAccessController.getCache().get(cacheEntry) instanceof Map ?
-                ((Map)cachedDataAccessController.getCache().get(cacheEntry)).size() :
-                cachedDataAccessController.getCache().get(cacheEntry) instanceof Collection ?
-                    ((Collection)cachedDataAccessController.getCache().get(cacheEntry)).size() :
-                    "null"))));
   }
 
   /**
@@ -1185,13 +1218,7 @@ public class Validator {
    * @return true if the field is an unsigned integer, false otherwise.
    */
   private static boolean validProbedFieldUnsignedInteger(String field) {
-    boolean result;
-    if (org.apache.commons.lang3.StringUtils.isEmpty(field) || !field.matches(".*\\d+.*") || field.contains("-")) {
-      result = false;
-    } else {
-      result = validProbedFieldInteger(field);
-    }
-    return result;
+    return !org.apache.commons.lang3.StringUtils.isEmpty(field) && field.matches(".*\\d+.*") && !field.contains("-") && validProbedFieldInteger(field);
   }
 
   /**
@@ -1206,6 +1233,7 @@ public class Validator {
     } else {
       try {
         double doubleNumber = Double.parseDouble(field);
+        log.debug("Field is a double: " + doubleNumber);
       } catch (NumberFormatException nfe) {
         log.error("Unable to cast field to a double.", nfe);
         result = false;
