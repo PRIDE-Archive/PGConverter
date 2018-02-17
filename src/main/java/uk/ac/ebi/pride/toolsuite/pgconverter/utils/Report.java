@@ -139,19 +139,18 @@ public class Report {
   private String contactsToString() {
     List<String> result = new ArrayList<>();
     contacts.forEach(person -> {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[");
-      sb.append(person.getTitle());
-      sb.append(",");
-      sb.append(person.getFirstName());
-      sb.append(",");
-      sb.append(person.getLastName());
-      sb.append(",");
-      sb.append(person.getAffiliation());
-      sb.append(",");
-      sb.append(person.getEmail());
-      sb.append("]");
-      result.add(sb.toString());
+      String personToAdd = "[" +
+          person.getTitle() +
+          "," +
+          person.getFirstName() +
+          "," +
+          person.getLastName() +
+          "," +
+          person.getAffiliation() +
+          "," +
+          person.getEmail() +
+          "]";
+      result.add(personToAdd);
     });
     return StringUtils.join(result, ",");
   }
@@ -163,15 +162,14 @@ public class Report {
   private String instrumentsToString() {
     List<String> result = new ArrayList<>();
     instruments.stream().forEachOrdered(instrument -> {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[");
-      sb.append(instrument.getCvParam().getCvLabel());
-      sb.append(",");
-      sb.append(instrument.getCvParam().getName());
-      sb.append(",");
-      sb.append(instrument.getCvParam().getAccession());
-      sb.append("]");
-      result.add(sb.toString());
+      String instrumentToAdd = "[" +
+          instrument.getCvParam().getCvLabel() +
+          "," +
+          instrument.getCvParam().getName() +
+          "," +
+          instrument.getCvParam().getAccession() +
+          "]";
+      result.add(instrumentToAdd);
     });
     return StringUtils.join(result, ",");
   }
@@ -183,17 +181,16 @@ public class Report {
   private String uniquePTMstoString() {
     List<String> result = new ArrayList<>();
     uniquePTMs.stream().forEachOrdered(cvParam -> {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[");
-      sb.append(cvParam.getCvLabel());
-      sb.append(",");
-      sb.append(cvParam.getName());
-      sb.append(",");
-      sb.append(cvParam.getAccession());
-      sb.append(",");
-      sb.append(cvParam.getValue());
-      sb.append("]");
-      result.add(sb.toString());
+      String cvParamToAdd = "[" +
+          cvParam.getCvLabel() +
+          "," +
+          cvParam.getName() +
+          "," +
+          cvParam.getAccession() +
+          "," +
+          cvParam.getValue() +
+          "]";
+      result.add(cvParamToAdd);
     });
     return StringUtils.join(result, ",");
   }
@@ -205,53 +202,51 @@ public class Report {
   private String softwareToString() {
     List<String> result = new ArrayList<>();
     softwareSet.stream().forEachOrdered(software -> {
-      StringBuilder sb = new StringBuilder();
-      sb.append("[");
-      sb.append(software.getName());
-      sb.append(",");
-      sb.append(software.getOrder());
-      sb.append(",");
-      sb.append(software.getVersion());
-      sb.append(",");
-      sb.append(software.getCustomization());
-      sb.append(",");
-      sb.append("{");
+      StringBuilder softwareToAdd = new StringBuilder();
+      softwareToAdd.append("[");
+      softwareToAdd.append(software.getName());
+      softwareToAdd.append(",");
+      softwareToAdd.append(software.getOrder());
+      softwareToAdd.append(",");
+      softwareToAdd.append(software.getVersion());
+      softwareToAdd.append(",");
+      softwareToAdd.append(software.getCustomization());
+      softwareToAdd.append(",");
+      softwareToAdd.append("{");
       List<String> softwareCvPs = new ArrayList<>();
       for (SoftwareCvParam softwareCvParam : software.getSoftwareCvParams()) {
-        StringBuilder cvp = new StringBuilder();
-        cvp.append("[");
-        cvp.append(softwareCvParam.getCvParam().getCvLabel());
-        cvp.append(",");
-        cvp.append(softwareCvParam.getCvParam().getName());
-        cvp.append(",");
-        cvp.append(softwareCvParam.getCvParam().getAccession());
-        cvp.append(",");
-        cvp.append(softwareCvParam.getCvParam().getValue());
-        cvp.append("]");
-        softwareCvPs.add(cvp.toString());
+        String cvp = "[" +
+            softwareCvParam.getCvParam().getCvLabel() +
+            "," +
+            softwareCvParam.getCvParam().getName() +
+            "," +
+            softwareCvParam.getCvParam().getAccession() +
+            "," +
+            softwareCvParam.getCvParam().getValue() +
+            "]";
+        softwareCvPs.add(cvp);
       }
       if (softwareCvPs.size()>0) {
         StringUtils.join(softwareCvPs, ",");
       }
-      sb.append("}");
-      sb.append(",");
-      sb.append("{");
+      softwareToAdd.append("}");
+      softwareToAdd.append(",");
+      softwareToAdd.append("{");
       List<String> softwareUserPs = new ArrayList<>();
       for (SoftwareUserParam softwareUserParam : software.getSoftwareUserParams()) {
-        StringBuilder userp = new StringBuilder();
-        userp.append("[");
-        userp.append(softwareUserParam.getName());
-        userp.append(",");
-        userp.append(softwareUserParam.getValue());
-        userp.append("]");
-        softwareUserPs.add(userp.toString());
+        String userp = "[" +
+            softwareUserParam.getName() +
+            "," +
+            softwareUserParam.getValue() +
+            "]";
+        softwareUserPs.add(userp);
       }
       if (softwareUserPs.size()>0) {
         StringUtils.join(softwareUserPs, ",");
       }
-      sb.append("}");
-      sb.append("]");
-      result.add(sb.toString());
+      softwareToAdd.append("}");
+      softwareToAdd.append("]");
+      result.add(softwareToAdd.toString());
     });
     return StringUtils.join(result, ",");
   }
@@ -265,17 +260,16 @@ public class Report {
       List<String> assayCvPs = new ArrayList<>();
       sb.append("{");
       cvParams.stream().forEachOrdered(assayGroupCvParam -> {
-        StringBuilder cvpsb = new StringBuilder();
-        cvpsb.append("[");
-        cvpsb.append(assayGroupCvParam.getCvLabel());
-        cvpsb.append(",");
-        cvpsb.append(assayGroupCvParam.getName());
-        cvpsb.append(",");
-        cvpsb.append(assayGroupCvParam.getAccession());
-        cvpsb.append(",");
-        cvpsb.append(assayGroupCvParam.getValue());
-        cvpsb.append("]");
-        assayCvPs.add(cvpsb.toString());
+        String assayGroupCvParamToAdd = "[" +
+            assayGroupCvParam.getCvLabel() +
+            "," +
+            assayGroupCvParam.getName() +
+            "," +
+            assayGroupCvParam.getAccession() +
+            "," +
+            assayGroupCvParam.getValue() +
+            "]";
+        assayCvPs.add(assayGroupCvParamToAdd);
       });
       sb.append(StringUtils.join(assayCvPs, ","));
       sb.append("}");
@@ -291,13 +285,12 @@ public class Report {
     List<String> assayCvPs = new ArrayList<>();
     sb.append("{");
     userParams.stream().forEachOrdered(assayGroupUserParam -> {
-      StringBuilder cvpsb = new StringBuilder();
-      cvpsb.append("[");
-      cvpsb.append(assayGroupUserParam.getName());
-      cvpsb.append(",");
-      cvpsb.append(assayGroupUserParam.getValue());
-      cvpsb.append("]");
-      assayCvPs.add(cvpsb.toString());
+      String assayGroupUserParamToAdd = "[" +
+          assayGroupUserParam.getName() +
+          "," +
+          assayGroupUserParam.getValue() +
+          "]";
+      assayCvPs.add(assayGroupUserParamToAdd);
     });
     sb.append(StringUtils.join(assayCvPs, ","));
     sb.append("}");
@@ -481,6 +474,13 @@ public class Report {
    **/
   public void setStatusOK() {
     this.status = "OK";
+  }
+
+  /**
+   * Sets new OK status.
+   **/
+  public void setStatusError(String message) {
+    this.status = "ERROR\n" + message;
   }
 
   /**

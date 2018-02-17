@@ -6,7 +6,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.access.method.P;
 import org.xml.sax.SAXException;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.AnalyzerInstrumentComponent;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.DetectorInstrumentComponent;
@@ -22,13 +21,14 @@ import uk.ac.ebi.pride.tools.cl.PrideXmlClValidator;
 import uk.ac.ebi.pride.tools.cl.XMLValidationErrorHandler;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
-import uk.ac.ebi.pride.utilities.data.controller.cache.CacheEntry;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.*;
 import uk.ac.ebi.pride.utilities.data.core.*;
 import uk.ac.ebi.pride.utilities.data.core.Software;
 import uk.ac.ebi.pride.utilities.util.StringUtils;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -65,7 +65,7 @@ public class Validator {
    */
   public static void startValidation(CommandLine cmd) throws IOException{
     if (cmd.hasOption(ARG_MZID)) {
-      validateMzdentML(cmd);
+      validateMzIdentML(cmd);
     } else if (cmd.hasOption(ARG_PRIDEXML)) {
       validatePrideXML(cmd);
     } else if (cmd.hasOption(ARG_MZTAB)) {
@@ -82,9 +82,8 @@ public class Validator {
    *
    * @param file the input file.
    * @return the corresponding FileType.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static FileType getFileType(File file) throws IOException {
+  private static FileType getFileType(File file) {
     FileType result;
     log.info("Checking file type for : " + file);
     if (PrideXmlControllerImpl.isValidFormat(file)) {
@@ -106,7 +105,7 @@ public class Validator {
    * @param cmd the command line arguments.
    * @throws IOException if there are problems reading or writing to the file system.
    */
-  public static void validateMzdentML(CommandLine cmd) throws IOException{
+  public static void validateMzIdentML(CommandLine cmd) throws IOException{
     File file = new File(cmd.getOptionValue(ARG_MZID));
     List<File> filesToValidate = getFilesToValidate(file);
     File mzid = filesToValidate.get(0);
@@ -117,20 +116,20 @@ public class Validator {
     File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
     if (fileType.equals(FileType.MZID)) {
       boolean valid = true; // assume true if not validating schema
-      List<Object> schemaResult;
+      SchemaCheckResult schemaResult;
       List<String> schemaErrors = null;
       if (cmd.hasOption(ARG_SCHEMA_VALIDATION) || cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
         schemaResult = validateMzidSchema(MZID_SCHEMA, mzid);
-        valid = (boolean) schemaResult.get(0);
-        schemaErrors = (List<String>) schemaResult.get(1);
+        valid = schemaResult.isValidAgainstSchema();
+        schemaErrors = schemaResult.getErrorMessages();
       }
       if (valid) {
         if (cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
           report.setStatusOK();
         } else {
-          Object[] validation = validateAssayFile(mzid, FileType.MZID, peakFiles);
-          report = (Report) validation[0];
-          assayFileSummary = (AssayFileSummary) validation[1];
+          ValidationResult validationResult = validateAssayFile(mzid, FileType.MZID, peakFiles);
+          report = validationResult.getReport();
+          assayFileSummary = validationResult.getAssayFileSummary();
         }
       } else {
         String message = "ERROR: Supplied -mzid file failed XML schema validation: " + filesToValidate.get(0) +
@@ -171,22 +170,21 @@ public class Validator {
       List<Object> schemaResult;
       List<String> schemaErrors = null;
       if (cmd.hasOption(ARG_SCHEMA_VALIDATION) || cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
-        schemaResult = validatePridexmlSchema(PRIDE_XML_SCHEMA, pridexxml);
-        valid = (boolean) schemaResult.get(0);
-        schemaErrors = (List<String>) schemaResult.get(1);
+        SchemaCheckResult schemaCheckResult = validatePridexmlSchema(PRIDE_XML_SCHEMA, pridexxml);
+        valid = schemaCheckResult .isValidAgainstSchema();
+        schemaErrors = schemaCheckResult .getErrorMessages();
         log.debug("Schema errors: " + String.join(",", schemaErrors));
       }
       if (valid ) {
         if(cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
           report.setStatusOK();
         } else {
-          Object[] validation = validateAssayFile(pridexxml, FileType.PRIDEXML, null);
-          report = (Report) validation[0];
-          assayFileSummary = (AssayFileSummary) validation[1];
+          ValidationResult validationResult= validateAssayFile(pridexxml, FileType.PRIDEXML, null);
+          report = validationResult.getReport();
+          assayFileSummary = validationResult.getAssayFileSummary();
         }
       } else {
-        String message = "ERROR: Supplied -pridexml file failed XML schema validation: " + filesToValidate.get(0) +
-            (schemaErrors==null ? "" : String.join(",", schemaErrors));
+        String message = "ERROR: Supplied -pridexml file failed XML schema validation: " + filesToValidate.get(0) + String.join(",", schemaErrors);
         log.error(message);
         report.setStatus(message);
       }
@@ -200,7 +198,7 @@ public class Validator {
 
 
   /**
-   * This method validated an mzTab file.
+   * This method validates an mzTab file.
    *
    * @param cmd the command line arguments.
    * @throws IOException if there are problems reading or writing to the file system.
@@ -213,9 +211,9 @@ public class Validator {
     Report report = new Report();
     FileType fileType = getFileType(filesToValidate.get(0));
     if (fileType.equals(FileType.MZTAB)) {
-      Object[] validation = validateAssayFile(filesToValidate.get(0), FileType.MZTAB, peakFiles);
-      report = (Report) validation[0];
-      assayFileSummary = (AssayFileSummary) validation[1];
+      ValidationResult validationResult = validateAssayFile(filesToValidate.get(0), FileType.MZTAB, peakFiles);
+      report = validationResult.getReport();
+      assayFileSummary = validationResult.getAssayFileSummary();
     } else {
       String message = "ERROR: Supplied -mztab file is not a valid mzTab file: " + filesToValidate.get(0);
       log.error(message);
@@ -230,9 +228,8 @@ public class Validator {
    *
    * @param file the input file for validation.
    * @return List of extracted files for validation.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static List<File> getFilesToValidate(File file) throws IOException {
+  private static List<File> getFilesToValidate(File file) {
     List<File> filesToValidate = new ArrayList<>();
     if (file.isDirectory()) {
       log.error("Unable to validate against directory of mzid files.");
@@ -250,7 +247,7 @@ public class Validator {
    * @return List of peak files.
    * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static List<File> getPeakFiles(CommandLine cmd) throws IOException {
+  private static List<File> getPeakFiles(CommandLine cmd) {
     List<File> peakFiles = new ArrayList<>();
     if (cmd.hasOption(ARG_PEAK) || cmd.hasOption(ARG_PEAKS)) {
       String[] peakFilesString = cmd.hasOption(ARG_PEAK) ? cmd.getOptionValues(ARG_PEAK)
@@ -279,9 +276,8 @@ public class Validator {
    *
    * @param files a list of input zip files to extract.
    * @return a list of extracted files.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  public static List<File> extractZipFiles(List<File> files) throws IOException {
+  public static List<File> extractZipFiles(List<File> files) {
     List<File> zippedFiles = findZippedFiles(files);
     if (zippedFiles.size()>0) {
       files.removeAll(zippedFiles);
@@ -304,9 +300,8 @@ public class Validator {
    * @param zippedFiles a list of input files to extract.
    * @param outputFolder the output directory.
    * @return a list of files that have been extracted.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static List<File> unzipFiles(List<File> zippedFiles, File outputFolder) throws IOException {
+  private static List<File> unzipFiles(List<File> zippedFiles, File outputFolder) {
     List<File> unzippedFiles = new ArrayList<>();
     zippedFiles.parallelStream().forEach(inputFile -> {
       try {
@@ -447,7 +442,7 @@ public class Validator {
   private static void scanForInstrument(DataAccessController dataAccessController, AssayFileSummary assayFileSummary) {
     log.info("Started scanning for instruments");
     Set<Instrument> instruments = new HashSet<>();
-    //check to see if we have instrument configurations in the result file to scan, this isn't always present
+    // check to see if we have instrument configurations in the result file to scan, this isn't always present
     MzGraphMetaData mzGraphMetaData = null;
     try {
       mzGraphMetaData = dataAccessController.getMzGraphMetaData();
@@ -458,19 +453,19 @@ public class Validator {
       Collection<InstrumentConfiguration> instrumentConfigurations = dataAccessController.getMzGraphMetaData().getInstrumentConfigurations();
       for (InstrumentConfiguration instrumentConfiguration : instrumentConfigurations) {
         Instrument instrument = new Instrument();
-        //set instrument cv param
+        // set instrument cv param
         uk.ac.ebi.pride.archive.repo.param.CvParam cvParam = new uk.ac.ebi.pride.archive.repo.param.CvParam();
         cvParam.setCvLabel(Constant.MS);
         cvParam.setName(Utility.MS_INSTRUMENT_MODEL_NAME);
         cvParam.setAccession(Utility.MS_INSTRUMENT_MODEL_AC);
         instrument.setCvParam(cvParam);
         instrument.setValue(instrumentConfiguration.getId());
-        //build instrument components
+        // build instrument components
         instrument.setSources(new ArrayList<>());
         instrument.setAnalyzers(new ArrayList<>());
         instrument.setDetectors(new ArrayList<>());
         int orderIndex = 1;
-        //source
+        // source
         for (InstrumentComponent source : instrumentConfiguration.getSource()) {
           if (source!=null) {
             SourceInstrumentComponent sourceInstrumentComponent = new SourceInstrumentComponent();
@@ -481,7 +476,7 @@ public class Validator {
             instrument.getSources().add(sourceInstrumentComponent);
           }
         }
-        //analyzer
+        // analyzer
         for (InstrumentComponent  analyzer: instrumentConfiguration.getAnalyzer()) {
           if (analyzer!=null) {
             AnalyzerInstrumentComponent analyzerInstrumentComponent = new AnalyzerInstrumentComponent();
@@ -492,7 +487,7 @@ public class Validator {
             instrument.getAnalyzers().add(analyzerInstrumentComponent);
           }
         }
-        //detector
+        // detector
         for (InstrumentComponent detector : instrumentConfiguration.getDetector()) {
           if (detector!=null) {
             DetectorInstrumentComponent detectorInstrumentComponent = new DetectorInstrumentComponent();
@@ -503,8 +498,7 @@ public class Validator {
             instrument.getDetectors().add(detectorInstrumentComponent);
           }
         }
-        //store instrument
-        instruments.add(instrument);
+        instruments.add(instrument); //store instrument
       }
     } // else do nothing
     assayFileSummary.addInstruments(instruments);
@@ -520,10 +514,8 @@ public class Validator {
   private static void scanForSoftware(DataAccessController dataAccessController, AssayFileSummary assayFileSummary) {
     log.info("Started scanning for software");
     ExperimentMetaData experimentMetaData = dataAccessController.getExperimentMetaData();
-    Set<Software> softwares = new HashSet<>();
-    softwares.addAll(experimentMetaData.getSoftwares());
-    Set<uk.ac.ebi.pride.archive.repo.assay.software.Software> softwareSet = new HashSet<>();
-    softwareSet.addAll(DataConversionUtil.convertSoftware(softwares));
+    Set<Software> softwares = new HashSet<>(experimentMetaData.getSoftwares());
+    Set<uk.ac.ebi.pride.archive.repo.assay.software.Software> softwareSet = new HashSet<>(DataConversionUtil.convertSoftware(softwares));
     assayFileSummary.addSoftwares(softwareSet);
     log.info("Finished scanning for software");
   }
@@ -560,9 +552,8 @@ public class Validator {
    * @param referencedIdentificationController the input controller to read over.
    * @param peakFiles the input related peak files.
    * @param assayFileSummary the assay file summary to output results to.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static void scanRefIdControllerpecificDetails(ReferencedIdentificationController referencedIdentificationController, List<File> peakFiles, AssayFileSummary assayFileSummary) throws IOException {
+  private static void scanRefIdControllerpecificDetails(ReferencedIdentificationController referencedIdentificationController, List<File> peakFiles, AssayFileSummary assayFileSummary) {
     log.info("Started scanning for mzid- or mztab-specific details");
     Set<PeakFileSummary> peakFileSummaries = new HashSet<>();
     List<String> peakFileNames = new ArrayList<>();
@@ -570,7 +561,7 @@ public class Validator {
       peakFileNames.add(peakFile.getName());
       String extension = FilenameUtils.getExtension(peakFile.getAbsolutePath());
       if (MassSpecFileFormat.MZML.toString().equalsIgnoreCase(extension)) {
-        getMzMLSummary(peakFile, assayFileSummary);
+        log.info("MzML summary: " + getMzMLSummary(peakFile, assayFileSummary));
         break;
       }
     }
@@ -618,9 +609,65 @@ public class Validator {
    * @param assayFile the input assay file.
    * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
    */
-  private static Object[] validateAssayFile(File assayFile, FileType type, List<File> dataAccessControllerFiles) {
-    File tempFile = createNewTempFile(assayFile);
+  private static ValidationResult validateAssayFile(File assayFile, FileType type, List<File> dataAccessControllerFiles) {
+    File tempAssayFile = createNewTempFile(assayFile);
     List<File> tempDataAccessControllerFiles = new ArrayList<>();
+    boolean badtempDataAccessControllerFiles = createTempDataAccessControllerFiles(dataAccessControllerFiles, tempDataAccessControllerFiles);
+    log.info("Validating assay file: " + assayFile.getAbsolutePath());
+    log.info("From temp file: " + tempAssayFile.getAbsolutePath());
+    AssayFileSummary assayFileSummary = new AssayFileSummary();
+    Report report = new Report();
+    try {
+      final AssayFileController assayFileController;
+      switch(type) {
+        case MZID :
+          assayFileController = new MzIdentMLControllerImpl(tempAssayFile);
+          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
+          break;
+        case PRIDEXML :
+          assayFileController = new PrideXmlControllerImpl(tempAssayFile);
+          break;
+        case MZTAB : assayFileController = new MzTabControllerImpl(tempAssayFile);
+          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
+          break;
+        default : log.error("Unrecognized assay fle type: " + type);
+          assayFileController = new MzIdentMLControllerImpl(tempAssayFile);
+          break;
+      }
+      checkSampleDeltaMzErrorRate(assayFileSummary, assayFileController);
+      report.setFileName(assayFile.getAbsolutePath());
+      assayFileSummary.setNumberOfIdentifiedSpectra(assayFileController.getNumberOfIdentifiedSpectra());
+      assayFileSummary.setNumberOfPeptides(assayFileController.getNumberOfPeptides());
+      assayFileSummary.setNumberOfProteins(assayFileController.getNumberOfProteins());
+      assayFileSummary.setNumberofMissingSpectra(assayFileController.getNumberOfMissingSpectra());
+      assayFileSummary.setNumberOfSpectra(assayFileController.getNumberOfSpectra());
+      if (assayFileSummary.getNumberofMissingSpectra()<1) {
+        validateProteinsAndPeptides(assayFile, assayFileSummary, assayFileController);
+      } else {
+        String message = "Missing spectra are present";
+        log.error(message);
+        report.setStatusError(message);
+      }
+      scanExtraMetadataDetails(type, dataAccessControllerFiles, assayFileSummary, assayFileController);
+      if (StringUtils.isEmpty(report.getStatus())) {
+        report.setStatusOK();
+      }
+    } catch (NullPointerException e) {
+      log.error("Null pointer Exception when scanning assay file", e);
+      report.setStatusError(e.getMessage());
+    } finally {
+      deleteAllTempFiles(tempAssayFile, tempDataAccessControllerFiles);
+    }
+    return new ValidationResult(assayFileSummary, report);
+  }
+
+  /**
+   * Creates temp data access controller files.
+   * @param dataAccessControllerFiles the input data access controller files
+   * @param tempDataAccessControllerFiles the temp data acceess controller files that get created
+   * @return true if all the temp files were created OK, false otherwise
+   */
+  private static boolean createTempDataAccessControllerFiles(List<File> dataAccessControllerFiles, List<File> tempDataAccessControllerFiles) {
     boolean badtempDataAccessControllerFiles = true;
     if (CollectionUtils.isNotEmpty(dataAccessControllerFiles)) {
       for (File dataAccessControllerFile : dataAccessControllerFiles) {
@@ -632,145 +679,122 @@ public class Validator {
       badtempDataAccessControllerFiles = CollectionUtils.isEmpty(tempDataAccessControllerFiles) ||
           tempDataAccessControllerFiles.size()!=dataAccessControllerFiles.size();
     }
-    Object[] result = new Object[2];
-    log.info("Validating assay file: " + assayFile.getAbsolutePath());
-    log.info("From temp file: " + tempFile.getAbsolutePath());
-    AssayFileSummary assayFileSummary = new AssayFileSummary();
-    Report report = new Report();
-    try {
-      final AssayFileController assayFileController;
-      switch(type) {
-        case MZID :
-          assayFileController = new MzIdentMLControllerImpl(tempFile!=null ? tempFile : assayFile);
-          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
-          break;
-        case PRIDEXML :
-          assayFileController = new PrideXmlControllerImpl(tempFile!=null ? tempFile : assayFile);
-          break;
-        case MZTAB : assayFileController = new MzTabControllerImpl(tempFile!=null ? tempFile : assayFile);
-          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
-          break;
-        default : log.error("Unrecognized assay fle type: " + type);
-          assayFileController = new MzIdentMLControllerImpl(tempFile);
-          break;
-      }
-      Set<String> uniquePeptides = new HashSet<>();
-      Set<CvParam> ptms = new HashSet<>();
-      final int NUMBER_OF_CHECKS=10;
-      List<Boolean> randomChecks = new ArrayList<>();
-      IntStream.range(1,NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(NUMBER_OF_CHECKS, 4.0)));
-      int checkFalseCounts = 0;
-      for (Boolean check : randomChecks) {
-        if (!check) {
-          checkFalseCounts++;
+    return badtempDataAccessControllerFiles;
+  }
+
+  /**
+   * Deletes all the temporary files (assay file, data access controller files).
+   * @param tempAssayFile the temp assay file to be deleted
+   * @param tempDataAccessControllerFiles the temp data access controller files to be deleted
+   */
+  private static void deleteAllTempFiles(File tempAssayFile, List<File> tempDataAccessControllerFiles) {
+    deleteTempFile(tempAssayFile);
+    if (CollectionUtils.isNotEmpty(tempDataAccessControllerFiles)) {
+      for (File dataAccessControllerFile : tempDataAccessControllerFiles) {
+        if (dataAccessControllerFile != null) {
+          deleteTempFile(dataAccessControllerFile);
         }
       }
-      assayFileSummary.setDeltaMzErrorRate((double) Math.round(((double) checkFalseCounts / (NUMBER_OF_CHECKS*NUMBER_OF_CHECKS))*100)/100);
-      report.setFileName(assayFile.getAbsolutePath());
-      assayFileSummary.setNumberOfIdentifiedSpectra(assayFileController.getNumberOfIdentifiedSpectra());
-      assayFileSummary.setNumberOfPeptides(assayFileController.getNumberOfPeptides());
-      assayFileSummary.setNumberOfProteins(assayFileController.getNumberOfProteins());
-      assayFileSummary.setNumberofMissingSpectra(assayFileController.getNumberOfMissingSpectra());
-      assayFileSummary.setNumberOfSpectra(assayFileController.getNumberOfSpectra());
-      if (assayFileSummary.getNumberofMissingSpectra()<1) {
-        double pepCount =0;
-        int protCount = 0;
-        final int PEP_STEP_SIZE= 100000;
-        for (Comparable proteinId : assayFileController.getProteinIds()) {
-          protCount++;
-          if (log.isDebugEnabled()) {
-            log.debug("\nPercent through total proteins, " + protCount + " / " + assayFileController.getProteinIds().size() + " : " + ((int) ((protCount * 100.0f) / assayFileController.getProteinIds().size())));
-            calcCacheSizses(assayFileController);
-          }
-          for (Peptide peptide : assayFileController.getProteinById(proteinId).getPeptides()) {
-            pepCount++;
-            if (log.isDebugEnabled()) {
-              if (((int) pepCount) % PEP_STEP_SIZE == 0) {
-                log.info("Processed another " + PEP_STEP_SIZE + " peptides. Now at: " + pepCount);
-              }
+    }
+  }
+
+  /**
+   * Checks a sampling of the delta m/z error rates.
+   * @param assayFileSummary the assay file summary
+   * @param assayFileController the assay file controller
+   */
+  private static void checkSampleDeltaMzErrorRate(AssayFileSummary assayFileSummary, AssayFileController assayFileController) {
+    final int NUMBER_OF_CHECKS = 10;
+    List<Boolean> randomChecks = new ArrayList<>();
+    IntStream.range(1, NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(NUMBER_OF_CHECKS, 4.0)));
+    int checkFalseCounts = 0;
+    for (Boolean check : randomChecks) {
+      if (!check) {
+        checkFalseCounts++;
+      }
+    }
+    assayFileSummary.setDeltaMzErrorRate(new BigDecimal(((double) checkFalseCounts / (NUMBER_OF_CHECKS*NUMBER_OF_CHECKS))).setScale(2, RoundingMode.HALF_UP).doubleValue());
+  }
+
+  /**
+   * Scans for extra metadata details.
+   * @param type the filetype
+   * @param dataAccessControllerFiles the data access controller files
+   * @param assayFileSummary the assay file summary
+   * @param assayFileController the assay file controller
+   */
+  private static void scanExtraMetadataDetails(FileType type, List<File> dataAccessControllerFiles, AssayFileSummary assayFileSummary, AssayFileController assayFileController) {
+    scanForGeneralMetadata(assayFileController, assayFileSummary);
+    scanForInstrument(assayFileController, assayFileSummary);
+    scanForSoftware(assayFileController, assayFileSummary);
+    scanForSearchDetails(assayFileController, assayFileSummary);
+    switch(type) {
+      case MZID :
+      case MZTAB :
+        scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
+        break;
+      default : // do nothing
+        break;
+    }
+  }
+
+  /**
+   * Validates across proteins and peptides for a given assay file
+   * @param assayFile the assay file (e.g. .mzid file)
+   * @param assayFileSummary the assay file summary
+   * @param assayFileController the assay file controller (e.g. for mzIdentML etc).
+   */
+  private static void validateProteinsAndPeptides(File assayFile, AssayFileSummary assayFileSummary, AssayFileController assayFileController) throws NullPointerException {
+    Set<String> uniquePeptides = new HashSet<>();
+    Set<CvParam> ptms = new HashSet<>();
+    for (Comparable proteinId : assayFileController.getProteinIds()) {
+      for (Peptide peptide : assayFileController.getProteinById(proteinId).getPeptides()) {
+        uniquePeptides.add(peptide.getSequence());
+        for (Modification modification : peptide.getModifications()) {
+          for (CvParam cvParam : modification.getCvParams()) {
+            if (StringUtils.isEmpty(cvParam.getCvLookupID())|| StringUtils.isEmpty(cvParam.getAccession()) || StringUtils.isEmpty(cvParam.getName())) {
+              String message = "A PTM CV Param's ontology, accession, or name is not defined properly: " + cvParam.toString() + " in file: " +  assayFile.getPath();
+              log.error(message);
+              throw new NullPointerException(message);
             }
-            uniquePeptides.add(peptide.getSequence());
-            for (Modification modification : peptide.getModifications()) {
-              for (CvParam cvParam : modification.getCvParams()) {
-                if (StringUtils.isEmpty(cvParam.getCvLookupID())|| StringUtils.isEmpty(cvParam.getAccession()) || StringUtils.isEmpty(cvParam.getName())) {
-                  String message = "A PTM CV Param's ontology, accession, or name is not defined properly: " + cvParam.toString() + " in file: " +  assayFile.getPath();
-                  log.error(message);
-                  throw new NullPointerException(message);
-                }
-                if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
-                  ptms.add(cvParam);
-                }
-              }
+            if (cvParam.getCvLookupID().equalsIgnoreCase(Constant.PSI_MOD) || cvParam.getCvLookupID().equalsIgnoreCase(Constant.UNIMOD)) {
+              ptms.add(cvParam);
             }
-          }
-        }
-        List<Boolean> matches = new ArrayList<>();
-        matches.add(true);
-        IntStream.range(1, (assayFileController.getNumberOfPeptides()<100 ? assayFileController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
-          Peptide peptide = assayFileController.getProteinById(assayFileController.getProteinIds().stream().findAny().get()).getPeptides().stream().findAny().get();
-          if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
-            if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
-              matches.add(false);
-            }
-          }
-        });
-        assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
-        assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
-        assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
-      } else {
-        String message = "Missing spectra are present";
-        log.error(message);
-        report.setStatus("ERROR\n" + message);
-      }
-      scanForGeneralMetadata(assayFileController, assayFileSummary);
-      scanForInstrument(assayFileController, assayFileSummary);
-      scanForSoftware(assayFileController, assayFileSummary);
-      scanForSearchDetails(assayFileController, assayFileSummary);
-      switch(type) {
-        case MZID :
-        case MZTAB :
-          scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
-          break;
-        default : // do nothing
-          break;
-      }
-      if (StringUtils.isEmpty(report.getStatus())) {
-        report.setStatusOK();
-      }
-    } catch (Exception e) {
-      log.error("Exception when scanning assay file", e);
-      report.setStatus("ERROR\n" + e.getMessage());
-    } finally {
-      if (tempFile!=null) {
-        log.info("Deleting temp file " + tempFile.getName() + ": " + tempFile.delete());
-      }
-      if (CollectionUtils.isNotEmpty(tempDataAccessControllerFiles)) {
-        for (File dataAccessControllerFile : tempDataAccessControllerFiles) {
-          if (dataAccessControllerFile!=null) {
-            log.info("Deleting temp file " + dataAccessControllerFile.getName() + ": " + dataAccessControllerFile.delete());
           }
         }
       }
     }
-    result[0] = report;
-    result[1] = assayFileSummary;
-    return result;
+    List<Boolean> matches = new ArrayList<>();
+    matches.add(true);
+    IntStream.range(1, (assayFileController.getNumberOfPeptides()<100 ? assayFileController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
+      Protein protein = assayFileController.getProteinById(assayFileController.getProteinIds().stream().findAny().orElse(null));
+      Peptide peptide = null;
+      if (protein != null) {
+        peptide = protein.getPeptides().stream().findAny().orElse(null);
+      } else {
+        log.error("Unable to read a random protein.");
+      }
+      if (peptide != null) {
+        if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
+          if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
+            matches.add(false);
+          }
+        } else {
+          log.error("Unable to read peptide form protein: " + protein.toString());
+        }
+      }
+    });
+    assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
+    assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
+    assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
   }
 
   /**
-   * This method outputs the cache sizes for debugging purposes.
-   *
-   * @param cachedDataAccessController the data access controller for the assay file
+   * Deletes a temporary file
+   * @param tempFile the temp file to be deleted.
    */
-  private static void calcCacheSizses(CachedDataAccessController cachedDataAccessController) {
-    Arrays.stream(CacheEntry.values()).forEach(cacheEntry -> log.debug("Cache entry: " + cacheEntry.name() + " Size: " + (
-        (cachedDataAccessController.getCache().get(cacheEntry)==null?
-            "null" :
-            cachedDataAccessController.getCache().get(cacheEntry) instanceof Map ?
-                ((Map)cachedDataAccessController.getCache().get(cacheEntry)).size() :
-                cachedDataAccessController.getCache().get(cacheEntry) instanceof Collection ?
-                    ((Collection)cachedDataAccessController.getCache().get(cacheEntry)).size() :
-                    "null"))));
+  private static void deleteTempFile(File tempFile) {
+    log.info("Deleting temp file " + tempFile.getName() + ": " + tempFile.delete());
   }
 
   /**
@@ -804,14 +828,12 @@ public class Validator {
    *
    * @param schemaLocation the location of the schema
    * @param mzIdentML the input mzIdentML file.
-   * @return a list of two elements: the first element is a boolean (true or false) if the file passed validation. If false, the 2nd element in the list of the error messages.
+   * @return a SchemaCheckResult - if the mzIdentML passed validation, validAgainstSchema will be true. False otherwise, and contains a list of the error messages.
    */
-  private static List<Object> validateMzidSchema(String schemaLocation, File mzIdentML) {
+  private static SchemaCheckResult validateMzidSchema(String schemaLocation, File mzIdentML) {
     log.info("Validating mzIdentML XML schema for: " + mzIdentML.getPath() + " using schema: " + schemaLocation);
-    List<Object> result = new ArrayList<>();
-    result.add(0, false);
-    result.add(1, new ArrayList<String>());
-    ErrorHandlerIface handler = new ValidationErrorHandler();
+    SchemaCheckResult result = new SchemaCheckResult(false, new ArrayList<>());
+    ValidationErrorHandler handler = new ValidationErrorHandler();
     try (BufferedReader br = new BufferedReader(new FileReader(mzIdentML))) {
       GenericSchemaValidator genericValidator = new GenericSchemaValidator();
       genericValidator.setSchema(new URI(schemaLocation));
@@ -819,13 +841,12 @@ public class Validator {
       genericValidator.validate(br);
       log.info(SCHEMA_OK_MESSAGE + mzIdentML.getName());
       List<String> errorMessages = handler.getErrorMessages();
-      result.remove(0);
-      result.add(0, errorMessages.size()<1);
-      ((ArrayList<String>)result.get(1)).addAll(errorMessages);
+      result.setValidAgainstSchema(errorMessages.size()<1);
+      result.setErrorMessages(errorMessages);
     } catch (IOException | SAXException e) {
-      log.error("File Not Found or SAX Exception: ", e);
+      log.error("Problem reading or parsing the file: ", e);
     } catch (URISyntaxException usi) {
-      log.error("URI syntax exception: ", usi);
+      log.error("Unable to parse URI syntax: ", usi);
     }
     return result;
   }
@@ -871,24 +892,21 @@ public class Validator {
    * @param pridexml the input PRIDE XML file.
    * @return a list of two elements: the first element is a boolean (true or false) if the file passed validation. If false, the 2nd element in the list of the error messages.
    */
-  private static List<Object> validatePridexmlSchema(String schemaLocation, File pridexml) {
+  private static SchemaCheckResult validatePridexmlSchema(String schemaLocation, File pridexml) {
     log.info("Validating PRIDE XML schema for: " + pridexml.getPath() + " using schema: " + schemaLocation);
-    List<Object> result = new ArrayList<>();
-    result.add(0, false);
-    result.add(1, new ArrayList<String>());
+    SchemaCheckResult result = new SchemaCheckResult(false, new ArrayList<>());
     try {
       PrideXmlClValidator validator = new PrideXmlClValidator();
       validator.setSchema(new URL(schemaLocation));
       BufferedReader br = new BufferedReader(new FileReader(pridexml));
       XMLValidationErrorHandler xveh = validator.validate(br);
       final String ERROR_MESSAGES = xveh.getErrorsFormattedAsPlainText();
-      result.remove(0);
-      result.add(0, StringUtils.isEmpty(ERROR_MESSAGES));
+      result.setValidAgainstSchema(StringUtils.isEmpty(ERROR_MESSAGES));
       if (StringUtils.isEmpty(ERROR_MESSAGES)) {
         log.info(SCHEMA_OK_MESSAGE + pridexml.getName());
       } else {
         log.error(ERROR_MESSAGES);
-        ((ArrayList<String>)result.get(1)).addAll(xveh.getErrorsAsList());
+        result.setErrorMessages(xveh.getErrorsAsList());
       }
     } catch (Exception e) {
       log.error("Exception while validating PRIDE XML schema:", e);
@@ -955,13 +973,13 @@ public class Validator {
           final int TOTAL_COLUMNS = defaultBedColumnCount+proBedOptionalColumnsCount;
           logProbedError("Incorrect number of columns found. Expected " + TOTAL_COLUMNS + " instead have : " + fields.length + "." + LINE_CONTENT + proBedLine, errorMessages);
         } else {
-          if (!validateAsqlTriple(asqlTriples.get(0), fields[0])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(0), fields[0])) {
             logProbedError("1st column 'chrom' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(1), fields[1])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(1), fields[1])) {
             logProbedError("2nd column 'chromStart' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(2), fields[2])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(2), fields[2])) {
             logProbedError("3rd column 'chromEnd' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
           } else {
             int chromStart = Integer.parseInt(fields[1]);
@@ -971,7 +989,7 @@ public class Validator {
             }
           }
           String name = fields[3];
-          if (!validateAsqlTriple(asqlTriples.get(3), fields[3])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(3), fields[3])) {
             logProbedError("4th column 'name' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           } else {
             if (uniqueNames.contains(name)) {
@@ -980,7 +998,7 @@ public class Validator {
               uniqueNames.add(name);
             }
           }
-          if (!validateAsqlTriple(asqlTriples.get(4), fields[4])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(4), fields[4])) {
             logProbedError("5th column 'score' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
           } else {
             int score = Integer.parseInt(fields[4]);
@@ -988,13 +1006,13 @@ public class Validator {
               logProbedError("5th column 'score' field must be between 0 - 1000 inclusive." + LINE_CONTENT + proBedLine, errorMessages);
             }
           }
-          if (!validateAsqlTriple(asqlTriples.get(5), fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
+          if (isInvalidAsqlTriple(asqlTriples.get(5), fields[5]) || (!fields[5].equals("-") && !fields[5].equals("+"))) {
             logProbedError("6th column 'strand' field must not be empty and must be either '-' or '+'." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(6), fields[6])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(6), fields[6])) {
             logProbedError("7th column 'thickStart' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(7), fields[7])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(7), fields[7])) {
             logProbedError("8th column 'thickEnd' " + FIELD_UNSIGNED_INTEGER + LINE_CONTENT + proBedLine, errorMessages);
           }
           int thickStart = Integer.parseInt(fields[6]);
@@ -1002,14 +1020,14 @@ public class Validator {
           if (thickEnd<thickStart) {
             logProbedError("7th and 8th columns 'thickStart' and 'thickEnd' fields must be in ascending order." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(8), fields[8]) || (!fields[8].equals("0"))) {
+          if (isInvalidAsqlTriple(asqlTriples.get(8), fields[8]) || (!fields[8].equals("0"))) {
             logProbedError("9th column 'reserved' field must not be empty and must be '0'. Line contnent: " + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(9), fields[9])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(9), fields[9])) {
             logProbedError("10th column 'blockCount' field must be an integer contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
           }
           int blockCount = Integer.parseInt(fields[9]);
-          if (!validateAsqlTriple(asqlTriples.get(10), fields[10])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(10), fields[10])) {
             logProbedError("11th column 'blockSizes' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           } else {
             String blockSizes = fields[10];
@@ -1023,7 +1041,7 @@ public class Validator {
               }
             }
           }
-          if (!validateAsqlTriple(asqlTriples.get(11), fields[11])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(11), fields[11])) {
             logProbedError("12th column 'chromStarts' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           } else {
             String chromStarts = fields[11];
@@ -1037,13 +1055,13 @@ public class Validator {
               }
             }
           }
-          if (!validateAsqlTriple(asqlTriples.get(12), fields[12])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(12), fields[12])) {
             logProbedError("13th column 'proteinAccession' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(13), fields[13])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(13), fields[13])) {
             logProbedError("14th column 'peptideSequence' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(14), fields[14]) ||
+          if (isInvalidAsqlTriple(asqlTriples.get(14), fields[14]) ||
               (!fields[14].equals("unique") &&
                   !fields[14].equals("not-unique[same-set]") &&
                   !fields[14].equals("not-unique[subset]") &&
@@ -1052,16 +1070,16 @@ public class Validator {
             logProbedError("15th column 'uniqueness' field must not be empty and must be either: 1. not-unique[same-set], " +
                 "2. not-unique[subset], 3. not-unique[conflict], or 4. not-unique[unknown]." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(15), fields[15])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(15), fields[15])) {
             logProbedError("16th column 'genomeRefVersion' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(16), fields[16])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(16), fields[16])) {
             logProbedError("17th column 'psmScore' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(17), fields[17])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(17), fields[17])) {
             logProbedError("18th column 'fdr' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(18), fields[18])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(18), fields[18])) {
             logProbedError("19th column 'modifications' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           } else {
             String modifications = fields[18];
@@ -1079,22 +1097,22 @@ public class Validator {
               }
             }
           }
-          if (!validateAsqlTriple(asqlTriples.get(19), fields[19])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(19), fields[19])) {
             logProbedError("20th column 'charge' field must not be empty and must contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(20), fields[20])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(20), fields[20])) {
             logProbedError("21st column 'expMassToCharge' field must not be empty and must contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(21), fields[21])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(21), fields[21])) {
             logProbedError("22nd column 'calcMassToCharge' field must not be empty and must contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(22), fields[22])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(22), fields[22])) {
             logProbedError("23rd column 'psmRank' field must not be empty and must contain at least one digit." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(23), fields[23])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(23), fields[23])) {
             logProbedError("24th column 'datasetID' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           }
-          if (!validateAsqlTriple(asqlTriples.get(24), fields[24])) {
+          if (isInvalidAsqlTriple(asqlTriples.get(24), fields[24])) {
             logProbedError("25th column 'uri' field must not be empty." + LINE_CONTENT + proBedLine, errorMessages);
           }
         }
@@ -1186,6 +1204,7 @@ public class Validator {
     } else {
       try {
         int integer = Integer.parseInt(field);
+        log.debug("Integer OK: " + integer);
       } catch (NumberFormatException nfe) {
         log.error("Unable to cast field to an integer.", nfe);
         result = false;
@@ -1199,13 +1218,7 @@ public class Validator {
    * @return true if the field is an unsigned integer, false otherwise.
    */
   private static boolean validProbedFieldUnsignedInteger(String field) {
-    boolean result;
-    if (org.apache.commons.lang3.StringUtils.isEmpty(field) || !field.matches(".*\\d+.*") || field.contains("-")) {
-      result = false;
-    } else {
-      result = validProbedFieldInteger(field);
-    }
-    return result;
+    return !org.apache.commons.lang3.StringUtils.isEmpty(field) && field.matches(".*\\d+.*") && !field.contains("-") && validProbedFieldInteger(field);
   }
 
   /**
@@ -1220,6 +1233,7 @@ public class Validator {
     } else {
       try {
         double doubleNumber = Double.parseDouble(field);
+        log.debug("Field is a double: " + doubleNumber);
       } catch (NumberFormatException nfe) {
         log.error("Unable to cast field to a double.", nfe);
         result = false;
@@ -1254,7 +1268,7 @@ public class Validator {
         for (int i=3; i<lines.size()-1; i++) {
           line = lines.get(i);
           line = line.replace(";", "");
-          String[] parts = line.split("  ", 3);
+          String[] parts = line.split(" {2}", 3);
           if (parts.length==3) {
             for (AsqlDataType asqlDataTypeToCheck : AsqlDataType.values()) {
               if (asqlDataTypeToCheck.toString().equals(parts[0])) {
@@ -1288,7 +1302,7 @@ public class Validator {
    * @param value the value to be checked.
    * @return true if the value is OK, false otherwise.
    */
-  private static boolean validateAsqlTriple(AsqlTriple asqlTriple, String value) {
+  private static boolean isInvalidAsqlTriple(AsqlTriple asqlTriple, String value) {
     boolean result = false;
     switch (asqlTriple.getAsqlDataType()) {
       case STRING:
@@ -1312,7 +1326,11 @@ public class Validator {
       default:
         log.error("Unrecognized ASQL data type: " + asqlTriple.getAsqlDataType());
     }
-    return result;
+    return !result;
   }
 }
+
+
+
+
 

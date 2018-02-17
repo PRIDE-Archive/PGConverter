@@ -43,7 +43,7 @@ By default the report is saved as a serilized object, so to make a human-readiab
 #### mzIdentML validation
 $ java -jar pg-converter.jar -v -mzid /path/to/data/foo.mzid -peak /path/to/data/bar1.mgf -skipserialization -reportfile /path/to/output/outputReport.txt
 #### mzTab validation
-$ java -jar pg-converter.jar -v -mztab /path/to/data/foo.mzid -peaks /path/to/data/bar1.mgf##/path/to/data/bar2.mgf -skipserialization -reportfile /path/to/output/outputReport.txt
+$ java -jar pg-converter.jar -v -mztab /path/to/data/foo.mztab -peaks /path/to/data/bar1.mgf##/path/to/data/bar2.mgf -skipserialization -reportfile /path/to/output/outputReport.txt
 #### PRIDE XML validation
 $ java -jar pg-converter.jar -v -pridexml /path/to/data/foo.pride.xml -skipserialization -reportfile /path/to/output/outputReport.txt
 #### XML schema validation

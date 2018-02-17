@@ -9,9 +9,14 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import uk.ac.ebi.pride.utilities.data.controller.cache.CacheEntry;
+import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.CachedDataAccessController;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * This class provides general utitilies for the PGConverter tool, such as:
@@ -107,7 +112,6 @@ public class Utility {
    * @param message the message content.
    */
   public static void notifyRedisChannel(String jedisServer, int jedisPort, String jedisPassword, String assayChannel, String message) {
-    try {
       log.info("Connecting to REDIS channel:" + assayChannel);
       JedisPool pool = new JedisPool(new JedisPoolConfig(), jedisServer, jedisPort, 0, jedisPassword);
       Jedis jedis = pool.getResource();
@@ -115,9 +119,6 @@ public class Utility {
       jedis.publish(assayChannel, message);
       log.info("Published message to REDIS, closing connection");
       jedis.quit();
-    } catch (Exception e) {
-      log.error("Exception while publishing message to REDIS channel.", e);
-    }
   }
 
   /**
@@ -141,5 +142,21 @@ public class Utility {
       tempFile = null;
     }
     return tempFile;
+  }
+
+  /**
+   * This method outputs the cache sizes for debugging purposes.
+   *
+   * @param cachedDataAccessController the data access controller for the assay file
+   */
+  private static void calcCacheSizses(CachedDataAccessController cachedDataAccessController) {
+    Arrays.stream(CacheEntry.values()).forEach(cacheEntry -> log.debug("Cache entry: " + cacheEntry.name() + " Size: " + (
+        (cachedDataAccessController.getCache().get(cacheEntry)==null?
+            "null" :
+            cachedDataAccessController.getCache().get(cacheEntry) instanceof Map ?
+                ((Map)cachedDataAccessController.getCache().get(cacheEntry)).size() :
+                cachedDataAccessController.getCache().get(cacheEntry) instanceof Collection ?
+                    ((Collection)cachedDataAccessController.getCache().get(cacheEntry)).size() :
+                    "null"))));
   }
 }
