@@ -61,9 +61,8 @@ public class Validator {
    * This class parses the command line arguments and beings the file validation.
    *
    * @param cmd command line arguments.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  public static void startValidation(CommandLine cmd) throws IOException{
+  public static void startValidation(CommandLine cmd) {
     if (cmd.hasOption(ARG_MZID)) {
       validateMzIdentML(cmd);
     } else if (cmd.hasOption(ARG_PRIDEXML)) {
@@ -103,9 +102,8 @@ public class Validator {
    * This method validates an an mzIdentML file.
    *
    * @param cmd the command line arguments.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  public static void validateMzIdentML(CommandLine cmd) throws IOException{
+  private static void validateMzIdentML(CommandLine cmd) {
     File file = new File(cmd.getOptionValue(ARG_MZID));
     List<File> filesToValidate = getFilesToValidate(file);
     File mzid = filesToValidate.get(0);
@@ -149,10 +147,9 @@ public class Validator {
    * This method validates a PRIDE XML file.
    *
    * @param cmd the command line arguments.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  public static void validatePrideXML(CommandLine cmd) throws IOException{
-    List<File> filesToValidate = new ArrayList<File>();
+  private static void validatePrideXML(CommandLine cmd) {
+    List<File> filesToValidate = new ArrayList<>();
     File file = new File(cmd.getOptionValue(ARG_PRIDEXML));
     if (file.isDirectory()) {
       log.error("Unable to validate against directory");
@@ -167,7 +164,6 @@ public class Validator {
     File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
     if (fileType.equals(FileType.PRIDEXML)) {
       boolean valid = true; // assume true if not validating schema
-      List<Object> schemaResult;
       List<String> schemaErrors = null;
       if (cmd.hasOption(ARG_SCHEMA_VALIDATION) || cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
         SchemaCheckResult schemaCheckResult = validatePridexmlSchema(PRIDE_XML_SCHEMA, pridexxml);
@@ -201,9 +197,8 @@ public class Validator {
    * This method validates an mzTab file.
    *
    * @param cmd the command line arguments.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static void validateMzTab(CommandLine cmd) throws IOException{
+  private static void validateMzTab(CommandLine cmd) {
     File file = new File(cmd.getOptionValue(ARG_MZTAB));
     List<File> filesToValidate = getFilesToValidate(file);
     List<File> peakFiles = getPeakFiles(cmd);
@@ -245,13 +240,12 @@ public class Validator {
    *
    * @param cmd the command line arguments.
    * @return List of peak files.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
   private static List<File> getPeakFiles(CommandLine cmd) {
     List<File> peakFiles = new ArrayList<>();
     if (cmd.hasOption(ARG_PEAK) || cmd.hasOption(ARG_PEAKS)) {
       String[] peakFilesString = cmd.hasOption(ARG_PEAK) ? cmd.getOptionValues(ARG_PEAK)
-          : cmd.hasOption(ARG_PEAKS) ?  cmd.getOptionValue(ARG_PEAKS).split("##") : new String[0];
+          : cmd.hasOption(ARG_PEAKS) ?  cmd.getOptionValue(ARG_PEAKS).split(STRING_SEPARATOR) : new String[0];
       for (String aPeakFilesString : peakFilesString) {
         File peakFile = new File(aPeakFilesString);
         if (peakFile.isDirectory()) {
