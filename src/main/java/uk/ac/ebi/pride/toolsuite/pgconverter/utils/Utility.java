@@ -113,7 +113,6 @@ public class Utility {
     try {
       log.info("Connecting to Redis channel:" + assayChannel);
       Set<HostAndPort> jedisClusterNodes = new HashSet<>();
-      log.info("servers to use: " + jedisServer);
       if (jedisServer.contains(STRING_SEPARATOR)) {
         String[] servers = jedisServer.split(STRING_SEPARATOR);
         String[] ports;
