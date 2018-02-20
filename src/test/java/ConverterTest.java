@@ -18,8 +18,6 @@ import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
  */
 
 public class ConverterTest {
-  private static final Logger logger = LoggerFactory.getLogger(ConverterTest.class);
-
   /**
    * This test converts an example mzIdentML file into an mzTab file.
    *
