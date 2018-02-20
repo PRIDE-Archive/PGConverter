@@ -3,7 +3,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
 import uk.ac.ebi.pride.toolsuite.pgconverter.Validator;
-import uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility;
 
 import java.io.File;
 import java.io.IOException;
