@@ -37,8 +37,12 @@ public class MainApp {
             Utility.notifyRedisChannel(cmd.getOptionValue(ARG_REDIS_SERVER), cmd.getOptionValue(ARG_REDIS_PORT),
                 cmd.hasOption(ARG_REDIS_PASSWORD) ? cmd.getOptionValue(ARG_REDIS_PASSWORD) : "", cmd.getOptionValue(ARG_REDIS_CHANNEL), cmd.getOptionValue(ARG_REDIS_MESSAGE));
           } else {
-            log.error("Insufficient parameters provided for sending REDIS message.");
+            log.error("Insufficient parameters provided for sending Redis message.");
+            Arrays.stream(args).forEach(log::error);
           }
+        } else {
+          log.error("Did not find validation, conversion, or messaging mode arguments.");
+          Arrays.stream(args).forEach(log::error);
         }
       }
       Utility.exit(cmd);
