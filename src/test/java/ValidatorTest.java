@@ -1,4 +1,6 @@
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
 import uk.ac.ebi.pride.toolsuite.pgconverter.Validator;
 
@@ -21,6 +23,8 @@ import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
  */
 
 public class ValidatorTest {
+
+  private static final Logger log = LoggerFactory.getLogger(ValidatorTest.class);
 
   /**
    * This test validates one example mzIdentML file which is related to a single peak .mgf file (without schema validation).
@@ -204,7 +208,7 @@ public class ValidatorTest {
     Validator.startValidation(MainApp.parseArgs(args));
     Exception e = null;
     try {
-      boolean reportStatus = reportStatus(reportFile); //unused
+      log.info("Report OK? " + reportStatus(reportFile));
     } catch (IOException ioe) {
       e = ioe;
     }
@@ -234,7 +238,7 @@ public class ValidatorTest {
     Validator.startValidation(MainApp.parseArgs(args));
     Exception e = null;
     try {
-      boolean reportStatus = reportStatus(reportFile); //unused
+      log.info("Report OK? " + reportStatus(reportFile));
     } catch (IOException ioe) {
       e = ioe;
     }

@@ -264,9 +264,8 @@ public class Converter {
    * @param aSQL the supporting aSQL file (.as).
    * @param chromSizes the supporting chromosome sizes text file.
    * @param bigBedConverter the UCSC bedToBigBed tool.
-   * @throws IOException if there are problems reading or writing to the file system.
    */
-  private static void convertProbedToBigbed(File proBed, File aSQL, File chromSizes, File bigBedConverter) throws IOException {
+  private static void convertProbedToBigbed(File proBed, File aSQL, File chromSizes, File bigBedConverter) {
     try {
       File outputBigBed = MzTabBedConverter.convertProBedToBigBed(
                           aSQL,
@@ -279,15 +278,5 @@ public class Converter {
       } catch (IOException|URISyntaxException|InterruptedException e) {
       log.error("Error when converting to bigBed: ", e);
     }
-  }
-
-    /**
-     * This method creates a new aSQL file based off an original, but with a new title name.
-     * @param name new title name
-     * @param aSQL aSQL file to base from.
-     * @throws IOException when there are problems reading or writing from the file system.
-     */
-  private static void createAsql(String name, File aSQL) throws IOException{
-    //TODO implementation. No longer needed?
   }
 }

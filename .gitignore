@@ -21,3 +21,4 @@ Thumbs.db
 log/
 target/
 .idea/
+.redis/

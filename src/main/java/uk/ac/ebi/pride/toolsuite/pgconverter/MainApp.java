@@ -33,16 +33,21 @@ public class MainApp {
         } else if (cmd.hasOption(ARG_CONVERSION)) {
           Converter.startConversion(cmd);
         } else if (cmd.hasOption(ARG_MESSAGE)) {
-          if (cmd.hasOption(ARG_REDIS) && cmd.hasOption(ARG_REDIS_SERVER) && cmd.hasOption(ARG_REDIS_PASSWORD) && cmd.hasOption(ARG_REDIS_PORT) && cmd.hasOption(ARG_REDIS_CHANNEL) && cmd.hasOption(ARG_REDIS_MESSAGE)) {
-            Utility.notifyRedisChannel(cmd.getOptionValue(ARG_REDIS_SERVER), Integer.parseInt(cmd.getOptionValue(ARG_REDIS_PORT)), cmd.getOptionValue(ARG_REDIS_PASSWORD), cmd.getOptionValue(ARG_REDIS_CHANNEL), cmd.getOptionValue(ARG_REDIS_MESSAGE));
+          if (cmd.hasOption(ARG_REDIS) && cmd.hasOption(ARG_REDIS_SERVER) && cmd.hasOption(ARG_REDIS_PORT) && cmd.hasOption(ARG_REDIS_CHANNEL) && cmd.hasOption(ARG_REDIS_MESSAGE)) {
+            Utility.notifyRedisChannel(cmd.getOptionValue(ARG_REDIS_SERVER), cmd.getOptionValue(ARG_REDIS_PORT),
+                cmd.hasOption(ARG_REDIS_PASSWORD) ? cmd.getOptionValue(ARG_REDIS_PASSWORD) : "", cmd.getOptionValue(ARG_REDIS_CHANNEL), cmd.getOptionValue(ARG_REDIS_MESSAGE));
           } else {
-            log.error("Insufficient parameters provided for sending REDIS message.");
+            log.error("Insufficient parameters provided for sending Redis message.");
+            Arrays.stream(args).forEach(log::error);
           }
+        } else {
+          log.error("Did not find validation, conversion, or messaging mode arguments.");
+          Arrays.stream(args).forEach(log::error);
         }
       }
-      Utility.exit(cmd);
+      Utility.exitCleanly(cmd);
     } catch (Exception e) {
-      log.error("Exception while processing files: ", e);
+      exitedUnexpectedly(e);
     }
   }
 

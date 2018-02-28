@@ -19,8 +19,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <assembly.dir>${project.name}-${project.version}</assembly.dir>
         <archive.repo.version>1.0.1</archive.repo.version>
-        <ms.data.core.api.version>2.0.19</ms.data.core.api.version>
-        <pride-utilities.version>2.0.16</pride-utilities.version>
+        <ms.data.core.api.version>2.0.21</ms.data.core.api.version>
+        <pride-utilities.version>2.0.18</pride-utilities.version>
     </properties>
 
     <build>
@@ -235,6 +235,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.5</version>
+        </dependency>
+        <dependency>
+            <groupId>net.ishiis.redis</groupId>
+            <artifactId>redis-unit</artifactId>
+            <version>1.0.3</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
