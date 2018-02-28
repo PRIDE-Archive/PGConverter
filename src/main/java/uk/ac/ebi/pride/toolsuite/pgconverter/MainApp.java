@@ -45,9 +45,9 @@ public class MainApp {
           Arrays.stream(args).forEach(log::error);
         }
       }
-      Utility.exit(cmd);
+      Utility.exitCleanly(cmd);
     } catch (Exception e) {
-      log.error("Exception while processing files: ", e);
+      exitedUnexpectedly(e);
     }
   }
 

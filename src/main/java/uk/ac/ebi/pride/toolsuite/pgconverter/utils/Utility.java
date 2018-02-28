@@ -90,15 +90,24 @@ public class Utility {
   }
 
   /**
-   * Handles exiting from the tool, and potentially messages Redis if set.
+   * Handles exiting cleanly from the tool, and potentially messages Redis if set.
    * @param cmd command line arguments.
    */
-  public static void exit(CommandLine cmd) {
+  public static void exitCleanly(CommandLine cmd) {
     if (cmd.hasOption(ARG_REDIS)) {
       notifyRedisChannel(cmd.getOptionValue(ARG_REDIS_SERVER), cmd.getOptionValue(ARG_REDIS_PORT),
           cmd.hasOption(ARG_REDIS_PASSWORD) ? cmd.getOptionValue(ARG_REDIS_PASSWORD) : "", cmd.getOptionValue(ARG_REDIS_CHANNEL), cmd.getOptionValue(ARG_REDIS_MESSAGE));
       }
     log.info("Exiting application.");
+  }
+
+  /**
+   * Handles exiting unexpectedly from the tool.
+   * @param e Caught exception during processing
+   */
+  public static void exitedUnexpectedly(Exception e) {
+    log.error("Exception while processing files: ", e);
+    System.exit(-1);
   }
 
   /**
