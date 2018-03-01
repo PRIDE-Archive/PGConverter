@@ -19,7 +19,7 @@ public class MessagingTest {
   private static final Logger log = LoggerFactory.getLogger(MessagingTest.class);
   private RedisCluster cluster;
   private List<String> hosts;
-  private List<Integer> ports;
+  private Integer[] ports;
 
   /**
    * Sets up the Redis test cluster using pre-defined ports.
@@ -31,11 +31,11 @@ public class MessagingTest {
     hosts.add(localhost);
     hosts.add(localhost);
     hosts.add(localhost);
-    ports = new LinkedList<>(); // 3 pre-defined ports
-    ports.add(6379);
-    ports.add(6380);
-    ports.add(6381);
-    cluster = new RedisCluster();
+    ports = new Integer[3]; // 3 pre-defined ports
+    ports[0] = 6279;
+    ports[1] = 6280;
+    ports[2] = 6281;
+    cluster = new RedisCluster(ports);
     cluster.start();
     try {
       Thread.sleep(10000); // allow time for cluster to be setup
@@ -58,6 +58,8 @@ public class MessagingTest {
    */
   @After
   public void tearDown() {
-    cluster.stop();
+    if (cluster!=null) {
+      cluster.stop();
+    }
   }
 }
