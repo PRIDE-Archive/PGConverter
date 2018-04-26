@@ -612,37 +612,37 @@ public class Validator {
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
     try {
-      final AssayFileController assayFileController;
+      final ResultFileController ResultFileController;
       switch(type) {
         case MZID :
-          assayFileController = new MzIdentMLControllerImpl(tempAssayFile);
-          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
+          ResultFileController = new MzIdentMLControllerImpl(tempAssayFile);
+          ResultFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
           break;
         case PRIDEXML :
-          assayFileController = new PrideXmlControllerImpl(tempAssayFile);
+          ResultFileController = new PrideXmlControllerImpl(tempAssayFile);
           break;
-        case MZTAB : assayFileController = new MzTabControllerImpl(tempAssayFile);
-          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
+        case MZTAB : ResultFileController = new MzTabControllerImpl(tempAssayFile);
+          ResultFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
           break;
         default : log.error("Unrecognized assay fle type: " + type);
-          assayFileController = new MzIdentMLControllerImpl(tempAssayFile);
+          ResultFileController = new MzIdentMLControllerImpl(tempAssayFile);
           break;
       }
-      checkSampleDeltaMzErrorRate(assayFileSummary, assayFileController);
+      checkSampleDeltaMzErrorRate(assayFileSummary, ResultFileController);
       report.setFileName(assayFile.getAbsolutePath());
-      assayFileSummary.setNumberOfIdentifiedSpectra(assayFileController.getNumberOfIdentifiedSpectra());
-      assayFileSummary.setNumberOfPeptides(assayFileController.getNumberOfPeptides());
-      assayFileSummary.setNumberOfProteins(assayFileController.getNumberOfProteins());
-      assayFileSummary.setNumberofMissingSpectra(assayFileController.getNumberOfMissingSpectra());
-      assayFileSummary.setNumberOfSpectra(assayFileController.getNumberOfSpectra());
+      assayFileSummary.setNumberOfIdentifiedSpectra(ResultFileController.getNumberOfIdentifiedSpectra());
+      assayFileSummary.setNumberOfPeptides(ResultFileController.getNumberOfPeptides());
+      assayFileSummary.setNumberOfProteins(ResultFileController.getNumberOfProteins());
+      assayFileSummary.setNumberofMissingSpectra(ResultFileController.getNumberOfMissingSpectra());
+      assayFileSummary.setNumberOfSpectra(ResultFileController.getNumberOfSpectra());
       if (assayFileSummary.getNumberofMissingSpectra()<1) {
-        validateProteinsAndPeptides(assayFile, assayFileSummary, assayFileController);
+        validateProteinsAndPeptides(assayFile, assayFileSummary, ResultFileController);
       } else {
         String message = "Missing spectra are present";
         log.error(message);
         report.setStatusError(message);
       }
-      scanExtraMetadataDetails(type, dataAccessControllerFiles, assayFileSummary, assayFileController);
+      scanExtraMetadataDetails(type, dataAccessControllerFiles, assayFileSummary, ResultFileController);
       if (StringUtils.isEmpty(report.getStatus())) {
         report.setStatusOK();
       }
@@ -695,12 +695,12 @@ public class Validator {
   /**
    * Checks a sampling of the delta m/z error rates.
    * @param assayFileSummary the assay file summary
-   * @param assayFileController the assay file controller
+   * @param ResultFileController the assay file controller
    */
-  private static void checkSampleDeltaMzErrorRate(AssayFileSummary assayFileSummary, AssayFileController assayFileController) {
+  private static void checkSampleDeltaMzErrorRate(AssayFileSummary assayFileSummary, ResultFileController ResultFileController) {
     final int NUMBER_OF_CHECKS = 10;
     List<Boolean> randomChecks = new ArrayList<>();
-    IntStream.range(1, NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(NUMBER_OF_CHECKS, 4.0)));
+    IntStream.range(1, NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(ResultFileController.checkRandomSpectraByDeltaMassThreshold(NUMBER_OF_CHECKS, 4.0)));
     int checkFalseCounts = 0;
     for (Boolean check : randomChecks) {
       if (!check) {
@@ -715,17 +715,17 @@ public class Validator {
    * @param type the filetype
    * @param dataAccessControllerFiles the data access controller files
    * @param assayFileSummary the assay file summary
-   * @param assayFileController the assay file controller
+   * @param ResultFileController the assay file controller
    */
-  private static void scanExtraMetadataDetails(FileType type, List<File> dataAccessControllerFiles, AssayFileSummary assayFileSummary, AssayFileController assayFileController) {
-    scanForGeneralMetadata(assayFileController, assayFileSummary);
-    scanForInstrument(assayFileController, assayFileSummary);
-    scanForSoftware(assayFileController, assayFileSummary);
-    scanForSearchDetails(assayFileController, assayFileSummary);
+  private static void scanExtraMetadataDetails(FileType type, List<File> dataAccessControllerFiles, AssayFileSummary assayFileSummary, ResultFileController ResultFileController) {
+    scanForGeneralMetadata(ResultFileController, assayFileSummary);
+    scanForInstrument(ResultFileController, assayFileSummary);
+    scanForSoftware(ResultFileController, assayFileSummary);
+    scanForSearchDetails(ResultFileController, assayFileSummary);
     switch(type) {
       case MZID :
       case MZTAB :
-        scanRefIdControllerpecificDetails((ReferencedIdentificationController) assayFileController, dataAccessControllerFiles, assayFileSummary);
+        scanRefIdControllerpecificDetails((ReferencedIdentificationController) ResultFileController, dataAccessControllerFiles, assayFileSummary);
         break;
       default : // do nothing
         break;
@@ -736,13 +736,13 @@ public class Validator {
    * Validates across proteins and peptides for a given assay file
    * @param assayFile the assay file (e.g. .mzid file)
    * @param assayFileSummary the assay file summary
-   * @param assayFileController the assay file controller (e.g. for mzIdentML etc).
+   * @param ResultFileController the assay file controller (e.g. for mzIdentML etc).
    */
-  private static void validateProteinsAndPeptides(File assayFile, AssayFileSummary assayFileSummary, AssayFileController assayFileController) throws NullPointerException {
+  private static void validateProteinsAndPeptides(File assayFile, AssayFileSummary assayFileSummary, ResultFileController ResultFileController) throws NullPointerException {
     Set<String> uniquePeptides = new HashSet<>();
     Set<CvParam> ptms = new HashSet<>();
-    for (Comparable proteinId : assayFileController.getProteinIds()) {
-      for (Peptide peptide : assayFileController.getProteinById(proteinId).getPeptides()) {
+    for (Comparable proteinId : ResultFileController.getProteinIds()) {
+      for (Peptide peptide : ResultFileController.getProteinById(proteinId).getPeptides()) {
         uniquePeptides.add(peptide.getSequence());
         for (Modification modification : peptide.getModifications()) {
           for (CvParam cvParam : modification.getCvParams()) {
@@ -760,8 +760,8 @@ public class Validator {
     }
     List<Boolean> matches = new ArrayList<>();
     matches.add(true);
-    IntStream.range(1, (assayFileController.getNumberOfPeptides()<100 ? assayFileController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
-      Protein protein = assayFileController.getProteinById(assayFileController.getProteinIds().stream().findAny().orElse(null));
+    IntStream.range(1, (ResultFileController.getNumberOfPeptides()<100 ? ResultFileController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
+      Protein protein = ResultFileController.getProteinById(ResultFileController.getProteinIds().stream().findAny().orElse(null));
       Peptide peptide = null;
       if (protein != null) {
         peptide = protein.getPeptides().stream().findAny().orElse(null);
