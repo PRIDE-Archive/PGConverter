@@ -19,7 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <assembly.dir>${project.name}-${project.version}</assembly.dir>
         <archive.repo.version>1.0.1</archive.repo.version>
-        <ms.data.core.api.version>2.0.22</ms.data.core.api.version>
+        <ms.data.core.api.version>2.0.23</ms.data.core.api.version>
         <pride-utilities.version>2.0.18</pride-utilities.version>
     </properties>
 
