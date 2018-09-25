@@ -612,7 +612,7 @@ public class Validator {
     AssayFileSummary assayFileSummary = new AssayFileSummary();
     Report report = new Report();
     try {
-      final AssayFileController assayFileController;
+      final ResultFileController assayFileController;
       switch(type) {
         case MZID :
           assayFileController = new MzIdentMLControllerImpl(tempAssayFile);
@@ -697,7 +697,7 @@ public class Validator {
    * @param assayFileSummary the assay file summary
    * @param assayFileController the assay file controller
    */
-  private static void checkSampleDeltaMzErrorRate(AssayFileSummary assayFileSummary, AssayFileController assayFileController) {
+  private static void checkSampleDeltaMzErrorRate(AssayFileSummary assayFileSummary, ResultFileController assayFileController) {
     final int NUMBER_OF_CHECKS = 10;
     List<Boolean> randomChecks = new ArrayList<>();
     IntStream.range(1, NUMBER_OF_CHECKS).sequential().forEach(i -> randomChecks.add(assayFileController.checkRandomSpectraByDeltaMassThreshold(NUMBER_OF_CHECKS, 4.0)));
@@ -717,7 +717,7 @@ public class Validator {
    * @param assayFileSummary the assay file summary
    * @param assayFileController the assay file controller
    */
-  private static void scanExtraMetadataDetails(FileType type, List<File> dataAccessControllerFiles, AssayFileSummary assayFileSummary, AssayFileController assayFileController) {
+  private static void scanExtraMetadataDetails(FileType type, List<File> dataAccessControllerFiles, AssayFileSummary assayFileSummary, ResultFileController assayFileController) {
     scanForGeneralMetadata(assayFileController, assayFileSummary);
     scanForInstrument(assayFileController, assayFileSummary);
     scanForSoftware(assayFileController, assayFileSummary);
@@ -738,7 +738,7 @@ public class Validator {
    * @param assayFileSummary the assay file summary
    * @param assayFileController the assay file controller (e.g. for mzIdentML etc).
    */
-  private static void validateProteinsAndPeptides(File assayFile, AssayFileSummary assayFileSummary, AssayFileController assayFileController) throws NullPointerException {
+  private static void validateProteinsAndPeptides(File assayFile, AssayFileSummary assayFileSummary, ResultFileController assayFileController) throws NullPointerException {
     Set<String> uniquePeptides = new HashSet<>();
     Set<CvParam> ptms = new HashSet<>();
     for (Comparable proteinId : assayFileController.getProteinIds()) {
