@@ -162,6 +162,11 @@ public class Utility {
    * @return the new temporary file. This may be null if it was not created successfully.
    */
   public static File createNewTempFile(File file) {
+    if(file != null) {
+      log.info("Trying to creating File: " +  file.getAbsolutePath());
+    }else{
+      log.info("Creating File: NULL");
+    }
     File tempFile = null;
     try {
       tempFile = new File (Files.createTempDir(), file.getName());

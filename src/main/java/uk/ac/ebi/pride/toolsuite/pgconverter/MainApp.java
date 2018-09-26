@@ -23,7 +23,7 @@ public class MainApp {
    * @param args command line arguments
    */
   public static void main(String[] args) {
-    log.info("Starting application...");
+    log.info("Starting application....");
     log.info("Program arguments: " + Arrays.toString(args));
     try {
       CommandLine cmd = MainApp.parseArgs(args);
