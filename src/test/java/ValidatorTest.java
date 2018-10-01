@@ -1,3 +1,4 @@
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,7 @@ public class ValidatorTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
+  @Ignore
   public void testMzidSchemaValidator() throws Exception {
     URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
     if (url == null) {
