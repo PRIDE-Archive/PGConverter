@@ -52,7 +52,7 @@ public class Validator {
 
   private static final Logger log = LoggerFactory.getLogger(Validator.class);
   private static final String PRIDE_XML_SCHEMA = "http://ftp.pride.ebi.ac.uk/pride/resources/schema/pride/pride.xsd";
-  private static final String MZID_SCHEMA = "http://www.psidev.info/sites/default/files/mzIdentML1.1.0.xsd";
+  private static final String MZID_SCHEMA = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/psi-pi/mzIdentML1.1.0.xsd";
   public static final String SCHEMA_OK_MESSAGE = "XML schema validation OK on: ";
   private static final String LINE_CONTENT = " Line content: ";
   private static final String FIELD_UNSIGNED_INTEGER = "field must not be empty and must be an unsigned integer containing at least one digit.";
