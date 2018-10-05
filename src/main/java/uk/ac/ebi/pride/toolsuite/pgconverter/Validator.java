@@ -778,15 +778,13 @@ public class Validator {
                 log.error("Unable to read a random protein.");
               }
               if (peptide != null) {
-                if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
-                  if (peptide.getSpectrum() != null) {
-                    if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
-                      matches.add(false);
-                    }
+                if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0 && (peptide.getSpectrum() != null) ) {
+                  if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
+                    matches.add(false);
                   }
-                } else {
-                  log.error("Unable to read peptide form protein: " + protein.toString());
                 }
+              } else {
+                log.error("Unable to read peptide form protein: " + protein.toString());
               }
             });
     assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
