@@ -760,24 +760,35 @@ public class Validator {
     }
     List<Boolean> matches = new ArrayList<>();
     matches.add(true);
-    IntStream.range(1, (assayFileController.getNumberOfPeptides()<100 ? assayFileController.getNumberOfPeptides() : 100)).sequential().forEach(i -> {
-      Protein protein = assayFileController.getProteinById(assayFileController.getProteinIds().stream().findAny().orElse(null));
-      Peptide peptide = null;
-      if (protein != null) {
-        peptide = protein.getPeptides().stream().findAny().orElse(null);
-      } else {
-        log.error("Unable to read a random protein.");
-      }
-      if (peptide != null) {
-        if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
-          if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
-            matches.add(false);
-          }
-        } else {
-          log.error("Unable to read peptide form protein: " + protein.toString());
-        }
-      }
-    });
+    IntStream.range(
+            1,
+            (assayFileController.getNumberOfPeptides() < 100
+                ? assayFileController.getNumberOfPeptides()
+                : 100))
+        .sequential()
+        .forEach(
+            i -> {
+              Protein protein =
+                  assayFileController.getProteinById(
+                      assayFileController.getProteinIds().stream().findAny().orElse(null));
+              Peptide peptide = null;
+              if (protein != null) {
+                peptide = protein.getPeptides().stream().findAny().orElse(null);
+              } else {
+                log.error("Unable to read a random protein.");
+              }
+              if (peptide != null) {
+                if (peptide.getFragmentation() != null && peptide.getFragmentation().size() > 0) {
+                  if (peptide.getSpectrum() != null) {
+                    if (!matchingFragmentIons(peptide.getFragmentation(), peptide.getSpectrum())) {
+                      matches.add(false);
+                    }
+                  }
+                } else {
+                  log.error("Unable to read peptide form protein: " + protein.toString());
+                }
+              }
+            });
     assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(ptms));
     assayFileSummary.setSpectrumMatchFragmentIons(matches.size() <= 1);
     assayFileSummary.setNumberOfUniquePeptides(uniquePeptides.size());
