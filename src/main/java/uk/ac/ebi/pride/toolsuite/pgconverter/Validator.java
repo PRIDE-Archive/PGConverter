@@ -4,6 +4,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -22,6 +23,7 @@ import uk.ac.ebi.pride.tools.cl.XMLValidationErrorHandler;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.*;
 import uk.ac.ebi.pride.utilities.data.controller.DataAccessController;
 import uk.ac.ebi.pride.utilities.data.controller.impl.ControllerImpl.*;
+import uk.ac.ebi.pride.utilities.data.controller.impl.Transformer.LightModelsTransformer;
 import uk.ac.ebi.pride.utilities.data.core.*;
 import uk.ac.ebi.pride.utilities.data.core.Software;
 import uk.ac.ebi.pride.utilities.util.StringUtils;
@@ -62,22 +64,23 @@ public class Validator {
    *
    * @param cmd command line arguments.
    */
-  public static void startValidation(CommandLine cmd) {
+  public static Report startValidation(CommandLine cmd) {
     if (cmd.hasOption(ARG_MZID)) {
-      validateMzIdentML(cmd);
+      return validateMzIdentML(cmd);
     } else if (cmd.hasOption(ARG_PRIDEXML)) {
-      validatePrideXML(cmd);
+      return validatePrideXML(cmd);
     } else if (cmd.hasOption(ARG_MZTAB)) {
-      validateMzTab(cmd);
+      return validateMzTab(cmd);
     } else if (cmd.hasOption(ARG_PROBED)) {
-      validateProBed(cmd);
+      return validateProBed(cmd);
     } else {
       log.error("Unable to validate unknown input file type");
+      return null;
     }
   }
 
   /**
-   * This method identiies a file's format extension type.
+   * This method identifies a file's format extension type.
    *
    * @param file the input file.
    * @return the corresponding FileType.
@@ -103,7 +106,7 @@ public class Validator {
    *
    * @param cmd the command line arguments.
    */
-  private static void validateMzIdentML(CommandLine cmd) {
+  private static Report validateMzIdentML(CommandLine cmd) {
     File file = new File(cmd.getOptionValue(ARG_MZID));
     List<File> filesToValidate = getFilesToValidate(file);
     File mzid = filesToValidate.get(0);
@@ -125,7 +128,12 @@ public class Validator {
         if (cmd.hasOption(ARG_SCHEMA_ONLY_VALIDATION)) {
           report.setStatusOK();
         } else {
-          ValidationResult validationResult = validateAssayFile(mzid, FileType.MZID, peakFiles);
+          ValidationResult validationResult;
+          if (cmd.hasOption(ARG_FAST_VALIDATION)) {
+            validationResult = validateAssayFile(mzid, FileType.MZID, peakFiles, true);
+          } else {
+            validationResult = validateAssayFile(mzid, FileType.MZID, peakFiles);
+          }
           report = validationResult.getReport();
           assayFileSummary = validationResult.getAssayFileSummary();
         }
@@ -141,6 +149,7 @@ public class Validator {
       report.setStatus(message);
     }
     outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
+    return report;
   }
 
   /**
@@ -148,7 +157,7 @@ public class Validator {
    *
    * @param cmd the command line arguments.
    */
-  private static void validatePrideXML(CommandLine cmd) {
+  private static Report validatePrideXML(CommandLine cmd) {
     List<File> filesToValidate = new ArrayList<>();
     File file = new File(cmd.getOptionValue(ARG_PRIDEXML));
     if (file.isDirectory()) {
@@ -190,6 +199,7 @@ public class Validator {
       report.setStatus(message);
     }
     outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
+    return report;
   }
 
 
@@ -198,7 +208,7 @@ public class Validator {
    *
    * @param cmd the command line arguments.
    */
-  private static void validateMzTab(CommandLine cmd) {
+  private static Report validateMzTab(CommandLine cmd) {
     File file = new File(cmd.getOptionValue(ARG_MZTAB));
     List<File> filesToValidate = getFilesToValidate(file);
     List<File> peakFiles = getPeakFiles(cmd);
@@ -216,6 +226,7 @@ public class Validator {
     }
     File outputFile  = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
     outputReport(assayFileSummary, report, outputFile, cmd.hasOption(ARG_SKIP_SERIALIZATION));
+    return report;
   }
 
   /**
@@ -655,6 +666,74 @@ public class Validator {
     return new ValidationResult(assayFileSummary, report);
   }
 
+
+  /**
+   * This method validates an input assay file. Based on isFastValidation flag, input files will get validated by one of the two approaches.
+   *
+   * @param assayFile the input assay file.
+   * @return an array of objects[2]: a Report object and an AssayFileSummary, respectively.
+   */
+  private static ValidationResult validateAssayFile(File assayFile, FileType type, List<File> dataAccessControllerFiles, boolean isFastValidation) {
+    final int NUMBER_OF_CHECKS = 100;
+    final double DELTA_THRESHOLD = 4.0;
+
+    if (isFastValidation) {
+      File tempAssayFile = createNewTempFile(assayFile);
+      List<File> tempDataAccessControllerFiles = new ArrayList<>();
+      boolean badtempDataAccessControllerFiles =
+              createTempDataAccessControllerFiles(
+                      dataAccessControllerFiles, tempDataAccessControllerFiles);
+      AssayFileSummary assayFileSummary = new AssayFileSummary();
+      Report report = new Report();
+      final FastMzIdentMLController assayFileController;
+      log.info("Validating assay file: " + assayFile.getAbsolutePath());
+      log.info("From temp file: " + tempAssayFile.getAbsolutePath());
+
+      try {
+        if (type.equals(FileType.MZID)) {
+          assayFileController = new FastMzIdentMLController(tempAssayFile);
+          assayFileController.addMSController(badtempDataAccessControllerFiles ? dataAccessControllerFiles : tempDataAccessControllerFiles);
+          assayFileController.doSpectraValidation();
+        } else {
+          throw new NotImplementedException(
+                  "No fast validation implementation for PRIDE XML or MzTAB");
+        }
+        report.setFileName(assayFile.getAbsolutePath());
+        assayFileSummary.setNumberOfIdentifiedSpectra(assayFileController.getNumberOfIdentifiedSpectra());
+        assayFileSummary.setNumberOfPeptides(assayFileController.getNumberOfPeptides());
+        assayFileSummary.setNumberOfProteins(assayFileController.getNumberOfProteins());
+        assayFileSummary.setNumberofMissingSpectra(assayFileController.getNumberOfMissingSpectra());
+        assayFileSummary.setNumberOfSpectra(assayFileController.getNumberOfSpectra());
+        assayFileSummary.setNumberOfUniquePeptides((assayFileController).getNumberOfUniquePeptides());
+        assayFileSummary.setDeltaMzErrorRate((assayFileController).getSampleDeltaMzErrorRate(NUMBER_OF_CHECKS, DELTA_THRESHOLD));
+        assayFileSummary.addPtms(DataConversionUtil.convertAssayPTMs(LightModelsTransformer.transformToCvParam(assayFileController.getIdentifiedUniquePTMs())));
+        assayFileSummary.setSearchDatabase(assayFileController.getSearchDataBases().get(0).getName());
+        assayFileSummary.setExampleProteinAccession("Not Applicable");
+        assayFileSummary.setProteinGroupPresent(assayFileController.hasProteinAmbiguityGroup());
+        if (assayFileSummary.getNumberofMissingSpectra() > 0) {
+          String message = "Missing spectra are present";
+          log.error(message);
+          report.setStatusError(message);
+        }
+        scanForGeneralMetadata(assayFileController, assayFileSummary);
+        scanForInstrument(assayFileController, assayFileSummary);
+        scanForSoftware(assayFileController, assayFileSummary);
+        if (StringUtils.isEmpty(report.getStatus())) {
+          report.setStatusOK();
+        }
+      } catch (NullPointerException e) {
+        log.error("Null pointer Exception when scanning assay file", e);
+        report.setStatusError(e.getMessage());
+      } finally {
+        deleteAllTempFiles(tempAssayFile, tempDataAccessControllerFiles);
+      }
+      return new ValidationResult(assayFileSummary, report);
+    } else {
+      return validateAssayFile(assayFile, type, dataAccessControllerFiles);
+    }
+  }
+
+
   /**
    * Creates temp data access controller files.
    * @param dataAccessControllerFiles the input data access controller files
@@ -923,7 +1002,7 @@ public class Validator {
    * @param columnFormat the BED column format, e.g the default BED12+13.
    * @param reportFile the file to save the output to.
    */
-  private static void validateProBed(File proBed, String columnFormat, File reportFile, File asqlFile) {
+  private static Report validateProBed(File proBed, String columnFormat, File reportFile, File asqlFile) {
     log.info("Validation proBed file: " + proBed.getPath() + " using column format: " + columnFormat);
     Report report = new Report();
     report.setFileName(proBed.getPath());
@@ -953,6 +1032,7 @@ public class Validator {
         writeProbedReport(report, reportFile);
       }
     }
+    return report;
   }
 
   /**
@@ -1128,7 +1208,7 @@ public class Validator {
    * @param cmd command line arguments.
 
    */
-  private static void validateProBed(CommandLine cmd) {
+  private static Report validateProBed(CommandLine cmd) {
     File proBed = new File(cmd.getOptionValue(ARG_PROBED));
     String COLUMN_FORMAT = cmd.hasOption(ARG_BED_COLUMN_FORMAT) ? cmd.getOptionValue(ARG_BED_COLUMN_FORMAT) : "BED12+13";
     File REPORT_FILE = cmd.hasOption(ARG_REPORTFILE) ? new File(cmd.getOptionValue(ARG_REPORTFILE)) : null;
@@ -1150,7 +1230,7 @@ public class Validator {
         }
       }
     }
-    validateProBed(proBed, COLUMN_FORMAT, REPORT_FILE, ASQL_FILE);
+    return validateProBed(proBed, COLUMN_FORMAT, REPORT_FILE, ASQL_FILE);
   }
 
   /**
