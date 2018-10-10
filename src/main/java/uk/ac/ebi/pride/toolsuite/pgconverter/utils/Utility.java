@@ -58,6 +58,7 @@ public class Utility {
   public static final String ARG_SCHEMA_VALIDATION = "schema";
   public static final String ARG_SCHEMA_ONLY_VALIDATION = "schemaonly";
   public static final String ARG_BED_COLUMN_FORMAT = "columnformat";
+  public static final String ARG_FAST_VALIDATION = "fastvalidation";
   public static final String STRING_SEPARATOR = "##";
 
   /**
