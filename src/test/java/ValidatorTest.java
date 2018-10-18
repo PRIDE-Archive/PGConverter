@@ -34,12 +34,12 @@ public class ValidatorTest {
    */
   @Test
   public void testMzidValidator() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
+    URL url = ValidatorTest.class.getClassLoader().getResource("test.mzid");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
     File inputMzidFile = new File(url.toURI());
-    url = ConverterTest.class.getClassLoader().getResource("test.mgf");
+    url = ValidatorTest.class.getClassLoader().getResource("test.mgf");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -58,12 +58,12 @@ public class ValidatorTest {
    */
   @Test
   public void mzidFastValidatorTest() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
+    URL url = ValidatorTest.class.getClassLoader().getResource("test.mzid");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
     File inputMzidFile = new File(url.toURI());
-    url = ConverterTest.class.getClassLoader().getResource("test.mgf");
+    url = ValidatorTest.class.getClassLoader().getResource("test.mgf");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -95,12 +95,12 @@ public class ValidatorTest {
   @Test
   @Ignore
   public void testMzidSchemaValidator() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
+    URL url = ValidatorTest.class.getClassLoader().getResource("test.mzid");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
     File inputMzidFile = new File(url.toURI());
-    url = ConverterTest.class.getClassLoader().getResource("test.mgf");
+    url = ValidatorTest.class.getClassLoader().getResource("test.mgf");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -111,7 +111,7 @@ public class ValidatorTest {
     assertTrue("No errors reported during the validation of the mzIdentML file", reportStatus(reportFile));
     reportFile.deleteOnExit();
 
-    url = ConverterTest.class.getClassLoader().getResource("mzidentml-example-bad.mzid");
+    url = ValidatorTest.class.getClassLoader().getResource("mzidentml-example-bad.mzid");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -133,7 +133,7 @@ public class ValidatorTest {
    */
   @Test
   public void testPridexmlValidator() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("test.xml");
+    URL url = ValidatorTest.class.getClassLoader().getResource("test.xml");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -151,7 +151,7 @@ public class ValidatorTest {
    */
   @Test
   public void testPridexmlSchemaValidator() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("test.xml");
+    URL url = ValidatorTest.class.getClassLoader().getResource("test.xml");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -169,12 +169,12 @@ public class ValidatorTest {
    */
   @Test
   public void testMztabValidator() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("test.mztab");
+    URL url = ValidatorTest.class.getClassLoader().getResource("test.mztab");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
     File inputMztabFile = new File(url.toURI());
-    url = ConverterTest.class.getClassLoader().getResource("test.mgf");
+    url = ValidatorTest.class.getClassLoader().getResource("test.mgf");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -214,7 +214,7 @@ public class ValidatorTest {
 
   @Test
   public void testProbedValidator() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("test.pro.bed");
+    URL url = ValidatorTest.class.getClassLoader().getResource("test.pro.bed");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -232,12 +232,12 @@ public class ValidatorTest {
    */
   @Test
   public void testBadMissingPeaksMzidValidator() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("test.mzid");
+    URL url = ValidatorTest.class.getClassLoader().getResource("test.mzid");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
     File inputMzidFile = new File(url.toURI());
-    url = ConverterTest.class.getClassLoader().getResource("missing-peaks.mgf");
+    url = ValidatorTest.class.getClassLoader().getResource("missing-peaks.mgf");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
@@ -262,12 +262,12 @@ public class ValidatorTest {
    */
   @Test
   public void testBadPtmCvparamsMzidValidator() throws Exception {
-    URL url = ConverterTest.class.getClassLoader().getResource("bad-ptm-cvps.mzid");
+    URL url = ValidatorTest.class.getClassLoader().getResource("bad-ptm-cvps.mzid");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
     File inputMzidFile = new File(url.toURI());
-    url = ConverterTest.class.getClassLoader().getResource("test.mgf");
+    url = ValidatorTest.class.getClassLoader().getResource("test.mgf");
     if (url == null) {
       throw new IllegalStateException("no file for input found!");
     }
