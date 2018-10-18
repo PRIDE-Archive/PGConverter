@@ -57,6 +57,7 @@ public class ValidatorTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
+  @Ignore // bamboo has a time out
   public void mzidFastValidatorTest() throws Exception {
     URL url = ValidatorTest.class.getClassLoader().getResource("test.mzid");
     if (url == null) {
