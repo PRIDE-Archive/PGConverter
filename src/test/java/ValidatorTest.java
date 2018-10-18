@@ -150,6 +150,7 @@ public class ValidatorTest {
    * @throws Exception if there are problems opening the example file.
    */
   @Test
+  @Ignore
   public void testPridexmlSchemaValidator() throws Exception {
     URL url = ValidatorTest.class.getClassLoader().getResource("test.xml");
     if (url == null) {
