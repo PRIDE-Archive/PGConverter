@@ -56,6 +56,7 @@ public class Validator {
   private static final String PRIDE_XML_SCHEMA = "http://ftp.pride.ebi.ac.uk/pride/resources/schema/pride/pride.xsd";
   private static final String MZID_SCHEMA = "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/psi-pi/mzIdentML1.1.0.xsd";
   public static final String SCHEMA_OK_MESSAGE = "XML schema validation OK on: ";
+  public static final String MISSING_SPECTRA_ERROR_MESSAGE = "Missing spectra Found. Hint: Please check your results file correctly referenced their peak files!";
   private static final String LINE_CONTENT = " Line content: ";
   private static final String FIELD_UNSIGNED_INTEGER = "field must not be empty and must be an unsigned integer containing at least one digit.";
 
@@ -649,9 +650,8 @@ public class Validator {
       if (assayFileSummary.getNumberofMissingSpectra()<1) {
         validateProteinsAndPeptides(assayFile, assayFileSummary, assayFileController);
       } else {
-        String message = "Missing spectra are present";
-        log.error(message);
-        report.setStatusError(message);
+        log.error(MISSING_SPECTRA_ERROR_MESSAGE);
+        report.setStatusError(MISSING_SPECTRA_ERROR_MESSAGE);
       }
       scanExtraMetadataDetails(type, dataAccessControllerFiles, assayFileSummary, assayFileController);
       if (StringUtils.isEmpty(report.getStatus())) {
@@ -711,9 +711,8 @@ public class Validator {
         assayFileSummary.setExampleProteinAccession("Not Applicable");
         assayFileSummary.setProteinGroupPresent(assayFileController.hasProteinAmbiguityGroup());
         if (assayFileSummary.getNumberofMissingSpectra() > 0) {
-          String message = "Missing spectra are present";
-          log.error(message);
-          report.setStatusError(message);
+          log.error(MISSING_SPECTRA_ERROR_MESSAGE);
+          report.setStatusError(MISSING_SPECTRA_ERROR_MESSAGE);
         }
         scanForGeneralMetadata(assayFileController, assayFileSummary);
         scanForInstrument(assayFileController, assayFileSummary);
